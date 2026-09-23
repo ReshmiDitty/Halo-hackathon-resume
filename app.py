@@ -1,511 +1,976 @@
 """
-AI-Powered Resume vs. Job Description Matcher & Interview Coach.
+HALO Recruitment & Talent Intelligence Platform (v2.0).
 
-A modern, interactive Streamlit web application that delivers real-time
-candidate screening, multi-factor match scoring, visual skill gap analytics,
-and AI-generated mock interview questions.
+AI-powered candidate screening, talent cohort analytics, skill gap distributions,
+real-time multi-factor resume scoring, and mock interview assessment pipeline.
 """
 
-import streamlit as st
+import json
+from collections import Counter
+import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
 
-from parser import extract_text
-from extractor import extract_resume_data, extract_jd_data, get_groq_api_key
-from scorer import calculate_match_score
+import database as db
+from extractor import extract_jd_data, extract_resume_data, get_groq_api_key, DEFAULT_MODEL
 from interview import generate_mock_questions
+from parser import extract_text
+from scorer import calculate_match_score
 
 # ---------- PAGE CONFIGURATION ----------
 st.set_page_config(
-    page_title="HALO Resume Analyzer | AI Candidate Screening",
-    page_icon="📄",
+    page_title="HALO – AI Recruitment & Screening Platform",
+    page_icon="🧭",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ---------- CUSTOM CSS STYLING ----------
+# ---------- GLOBAL DARK THEME STYLING ----------
 st.markdown(
     """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-
-    .stApp { background-color: #f4f6fa; }
-
-    section[data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #e5e7eb;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    html, body, [class*="css"], .stApp {
+        font-family: 'Inter', sans-serif;
+        background-color: #070B14 !important;
+        color: #E2E8F0 !important;
     }
-    section[data-testid="stSidebar"] .block-container { padding-top: 1.5rem; }
 
-    .nav-label {
-        color: #9ca3af;
+    /* Top header bar & deploy button adjustments */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+    }
+
+    /* Sidebar Dark Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #0B111E !important;
+        border-right: 1px solid #141F36 !important;
+    }
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 1.2rem;
+        padding-bottom: 2rem;
+    }
+
+    /* Nav Labels & Buttons */
+    .nav-header {
+        color: #64748B;
         font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 1.2px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
         margin: 1.2rem 0 0.6rem 0;
     }
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 10px;
-        border-radius: 8px;
-        font-size: 0.92rem;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 2px;
-    }
-    .nav-item.active {
-        background: #ecfeff;
-        color: #0e7490;
-    }
-    .dot { font-size: 0.7rem; }
-    .dot.active { color: #06b6d4; }
-    .dot.inactive { color: #d1d5db; }
 
-    .status-box {
-        border: 1px solid #e5e7eb;
+    /* System Status Card in Sidebar */
+    .status-card {
+        background: #0E1626;
+        border: 1px solid #1E293B;
         border-radius: 10px;
         padding: 12px 14px;
         margin-top: 1.5rem;
         font-size: 0.82rem;
-        background: #f9fafb;
     }
-    .status-title {
-        font-weight: 700;
-        color: #374151;
-        font-size: 0.75rem;
+    .status-card-title {
+        font-weight: 800;
+        color: #94A3B8;
+        font-size: 0.72rem;
         letter-spacing: 1px;
+        text-transform: uppercase;
         margin-bottom: 8px;
     }
-    .status-row { display: flex; justify-content: space-between; color: #6b7280; margin-bottom: 4px; }
-    .status-val { font-weight: 700; }
-
-    .eyebrow {
-        color: #0891b2;
+    .status-row {
+        display: flex;
+        justify-content: space-between;
+        color: #94A3B8;
+        margin-bottom: 5px;
+    }
+    .status-val-local {
+        color: #38BDF8;
         font-weight: 700;
-        font-size: 0.78rem;
-        letter-spacing: 1.8px;
+    }
+    .status-val-online {
+        color: #34D399;
+        font-weight: 700;
+    }
+
+    /* Typography */
+    .eyebrow {
+        color: #38BDF8;
+        font-weight: 800;
+        font-size: 0.8rem;
+        letter-spacing: 2px;
         text-transform: uppercase;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
     }
     .main-title {
-        font-size: 2.3rem;
+        font-size: 2.4rem;
         font-weight: 800;
-        color: #111827;
+        color: #FFFFFF;
         margin-bottom: 6px;
         line-height: 1.2;
     }
     .subtitle {
-        color: #6b7280;
+        color: #94A3B8;
         font-size: 1rem;
-        margin-bottom: 1.8rem;
+        margin-bottom: 2rem;
     }
 
+    /* Metric KPI Cards */
+    .kpi-container {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+        margin-bottom: 2rem;
+    }
     .kpi-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
+        background: #0E1626;
+        border: 1px solid #1E293B;
         border-radius: 12px;
         padding: 1.1rem 1.2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
-    .kpi-label {
-        color: #9ca3af;
-        font-size: 0.7rem;
-        font-weight: 700;
+    .kpi-title {
+        color: #94A3B8;
+        font-size: 0.72rem;
+        font-weight: 800;
         letter-spacing: 0.8px;
         text-transform: uppercase;
         margin-bottom: 8px;
     }
-    .kpi-value { font-size: 2rem; font-weight: 800; line-height: 1; margin-bottom: 6px; }
-    .kpi-sub { font-size: 0.78rem; font-weight: 700; }
-
-    .section-heading {
-        font-size: 1.15rem;
+    .kpi-num {
+        font-size: 2.1rem;
         font-weight: 800;
-        color: #111827;
-        margin: 2rem 0 1rem 0;
+        line-height: 1;
+        margin-bottom: 6px;
+    }
+    .kpi-footer {
+        font-size: 0.78rem;
+        font-weight: 700;
     }
 
-    .chart-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
+    /* Section Headings */
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #F8FAFC;
+        margin: 2rem 0 1.2rem 0;
+    }
+
+    /* Chart Containers */
+    .chart-box {
+        background: #0E1626;
+        border: 1px solid #1E293B;
         border-radius: 12px;
-        padding: 1.1rem 1.2rem 0.4rem 1.2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        padding: 1rem 1rem 0.2rem 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
     .chart-title {
-        font-weight: 700;
-        color: #111827;
         font-size: 0.92rem;
-        margin-bottom: 0.6rem;
+        font-weight: 700;
+        color: #F8FAFC;
+        margin-bottom: 0.5rem;
     }
 
+    /* Custom Badges */
     .badge {
-        display: inline-block; padding: 5px 13px; border-radius: 999px;
-        font-size: 0.82rem; font-weight: 600; margin: 3px 5px 3px 0;
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin: 3px 4px 3px 0;
     }
-    .badge-matched { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-    .badge-missing-required { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-    .badge-missing-preferred { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+    .badge-matched {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ADE80;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .badge-missing-req {
+        background: rgba(239, 68, 68, 0.15);
+        color: #F87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .badge-missing-pref {
+        background: rgba(234, 179, 8, 0.15);
+        color: #FACC15;
+        border: 1px solid rgba(234, 179, 8, 0.3);
+    }
 
-    .exp-card {
-        background: #ffffff; border-left: 4px solid #0891b2; border-radius: 8px;
-        padding: 1rem 1.2rem; margin-bottom: 0.8rem; border-top: 1px solid #e5e7eb;
-        border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;
+    /* Cards */
+    .dark-card {
+        background: #0E1626;
+        border: 1px solid #1E293B;
+        border-radius: 10px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 0.8rem;
     }
-    .exp-title { font-weight: 700; color: #111827; font-size: 1rem; }
-    .exp-meta { color: #6b7280; font-size: 0.85rem; margin-bottom: 0.4rem; }
+    .dark-card-title {
+        font-weight: 700;
+        color: #F8FAFC;
+        font-size: 1rem;
+    }
+    .dark-card-meta {
+        color: #94A3B8;
+        font-size: 0.85rem;
+        margin-bottom: 0.3rem;
+    }
 
-    .question-card {
-        background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;
-        padding: 1.2rem 1.4rem; margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Streamlit widgets dark styling */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+        background-color: #0E1626 !important;
+        color: #F8FAFC !important;
+        border: 1px solid #1E293B !important;
     }
-    .q-type {
-        display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.5px; padding: 3px 10px; border-radius: 999px; margin-bottom: 0.5rem;
+    .stSelectbox>div>div {
+        background-color: #0E1626 !important;
+        color: #F8FAFC !important;
+        border: 1px solid #1E293B !important;
     }
-    .q-type-technical { background: #e0e7ff; color: #4338ca; }
-    .q-type-behavioral { background: #fce7f3; color: #be185d; }
-    .q-type-role-fit { background: #dcfce7; color: #15803d; }
-    .q-type-error { background: #fee2e2; color: #b91c1c; }
-    .q-text { font-size: 1rem; font-weight: 600; color: #111827; margin-bottom: 0.3rem; }
-    .q-tests { color: #6b7280; font-size: 0.85rem; font-style: italic; }
-
+    div[data-testid="stFileUploader"] {
+        background-color: #0E1626 !important;
+        border: 1px dashed #334155 !important;
+        border-radius: 10px;
+        padding: 10px;
+    }
+    
+    /* Primary buttons */
     .stButton>button {
-        background: linear-gradient(90deg, #0891b2, #6366f1);
-        color: white; font-weight: 700; border: none; border-radius: 10px;
-        padding: 0.65rem 2.2rem; font-size: 1rem;
+        background: linear-gradient(90deg, #0284C7, #6366F1) !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.5rem !important;
+        transition: all 0.2s ease-in-out;
     }
-    .stButton>button:hover { color: white; opacity: 0.92; }
-
-    div[data-testid="stMetricValue"] { color: #111827; }
+    .stButton>button:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-# ---------- SIDEBAR NAVIGATION & STATUS ----------
-with st.sidebar:
-    st.markdown("### 🧭 HALO Resume Analyzer")
-    st.caption("AI-powered candidate screening & evaluation")
-    st.markdown('<div class="nav-label">PLATFORM NAVIGATION</div>', unsafe_allow_html=True)
-    st.markdown('<div class="nav-item active"><span class="dot active">●</span> Candidate Matcher</div>', unsafe_allow_html=True)
-    st.markdown('<div class="nav-item"><span class="dot inactive">○</span> Skill Gap Analysis</div>', unsafe_allow_html=True)
-    st.markdown('<div class="nav-item"><span class="dot inactive">○</span> Mock Interview Coach</div>', unsafe_allow_html=True)
+# Initialize database
+db.init_db()
 
+# ---------- SIDEBAR NAVIGATION & ACTIONS ----------
+with st.sidebar:
+    if st.button("✨ Load Demo Candidate (John Doe)", use_container_width=True):
+        st.session_state["demo_loaded"] = True
+        st.success("Loaded John Doe demo profile!")
+
+    st.markdown('<div class="nav-header">PLATFORM NAVIGATION</div>', unsafe_allow_html=True)
+    
+    page = st.radio(
+        "Navigation",
+        options=[
+            "📊 Dashboard",
+            "📄 Resume Analyzer",
+            "🎯 Candidate Assessment",
+            "👥 Recruiter Database",
+            "⚖️ Reports & Comparison",
+            "⚙️ Settings",
+        ],
+        label_visibility="collapsed",
+    )
+
+    # Fetch live candidate count for status
+    candidates_list = db.get_all_candidates()
+    candidate_count = len(candidates_list)
     has_api_key = bool(get_groq_api_key())
-    status_color = "#16a34a" if has_api_key else "#dc2626"
-    status_text = "Online" if has_api_key else "Missing Key"
+
+    ai_engine_text = "GROQ CLOUD" if has_api_key else "LOCAL FALLBACK"
+    ai_engine_color = "#38BDF8" if has_api_key else "#FACC15"
 
     st.markdown(
         f"""
-    <div class="status-box">
-        <div class="status-title">SYSTEM STATUS</div>
-        <div class="status-row"><span>AI Engine</span><span class="status-val" style="color:#0891b2;">Groq Cloud</span></div>
-        <div class="status-row"><span>LLM Model</span><span class="status-val">gpt-oss-120b</span></div>
-        <div class="status-row"><span>Embedding</span><span class="status-val">all-MiniLM-L6-v2</span></div>
-        <div class="status-row"><span>Status</span><span class="status-val" style="color:{status_color};">{status_text}</span></div>
+    <div class="status-card">
+        <div class="status-card-title">SYSTEM STATUS</div>
+        <div class="status-row"><span>AI Engine:</span><span class="status-val-local" style="color:{ai_engine_color};">{ai_engine_text}</span></div>
+        <div class="status-row"><span>Database:</span><span class="status-val-online">SQLite Online</span></div>
+        <div class="status-row"><span>Candidates:</span><span style="font-weight:700; color:#F8FAFC;">{candidate_count}</span></div>
     </div>
     """,
         unsafe_allow_html=True,
     )
 
-    if not has_api_key:
-        st.warning("⚠️ Groq API key is not detected. Please add it to `.streamlit/secrets.toml`.")
-
-# ---------- MAIN HEADER ----------
-st.markdown('<div class="eyebrow">RECRUITER & CANDIDATE COMMAND CENTER</div>', unsafe_allow_html=True)
-st.markdown('<div class="main-title">Resume vs. Job Description Analyzer</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="subtitle">Real-time match scoring, granular skill gap breakdown, and AI-generated interview questions.</div>',
-    unsafe_allow_html=True,
-)
-
-# ---------- UPLOAD SECTION ----------
-col1, col2 = st.columns(2)
-with col1:
-    st.markdown("**📎 Upload Candidate Resume**")
-    resume_file = st.file_uploader(
-        "Upload Resume",
-        type=["pdf", "docx", "txt"],
-        label_visibility="collapsed",
-        key="resume_uploader",
-    )
-    if resume_file:
-        st.caption(f"Loaded: `{resume_file.name}` ({resume_file.size / 1024:.1f} KB)")
-
-with col2:
-    st.markdown("**💼 Job Description**")
-    jd_file = st.file_uploader(
-        "Upload Job Description",
-        type=["pdf", "docx", "txt"],
-        label_visibility="collapsed",
-        key="jd_uploader",
-    )
-    jd_text_input = st.text_area(
-        "Paste Job Description text here if not uploading a file:",
-        height=100,
-        placeholder="Paste JD requirements, responsibilities, and qualifications here...",
+    st.markdown(
+        '<div style="color:#475569; font-size:0.75rem; text-align:center; margin-top:2rem;">HALO Platform v2.0 • AI Recruitment</div>',
+        unsafe_allow_html=True,
     )
 
-st.write("")
-analyze_clicked = st.button("✨ Analyze Match & Generate Questions", type="primary")
 
-# ---------- PROCESSING LOGIC ----------
-if analyze_clicked:
-    if not resume_file:
-        st.error("❌ Please upload a candidate resume to proceed.")
-        st.stop()
-    if not jd_file and not jd_text_input.strip():
-        st.error("❌ Please upload a job description file or paste the job description text.")
-        st.stop()
-    if not get_groq_api_key():
-        st.error("❌ Groq API key is missing. Please set `GROQ_API_KEY` in `.streamlit/secrets.toml` or environment variables.")
-        st.stop()
+# ==============================================================================
+# PAGE 1: TALENT SCREENING & HIRING DASHBOARD
+# ==============================================================================
+if page == "📊 Dashboard":
+    st.markdown('<div class="eyebrow">RECRUITER COMMAND CENTER</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Talent Screening & Hiring Dashboard</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Real-time metrics, qualification benchmarks, skill gap distributions, and candidate evaluation pipeline.</div>',
+        unsafe_allow_html=True,
+    )
 
-    with st.spinner("📄 Step 1/4: Extracting text from documents..."):
-        try:
-            resume_text = extract_text(resume_file)
-            jd_text = extract_text(jd_file) if jd_file else jd_text_input.strip()
-        except Exception as e:
-            st.error(f"Text extraction failed: {e}")
-            st.stop()
+    all_cands = db.get_all_candidates()
+    total_cands = len(all_cands)
 
-    with st.spinner("🧠 Step 2/4: Parsing structured entities with Groq AI..."):
-        try:
-            resume_data = extract_resume_data(resume_text)
-            jd_data = extract_jd_data(jd_text)
-        except Exception as e:
-            st.error(f"Information extraction failed: {e}")
-            st.stop()
+    if total_cands > 0:
+        avg_match = sum(c["match_score"] for c in all_cands) / total_cands
+        assessed_cands = [c for c in all_cands if c["status"] == "Assessed" and c["assessment_score"] > 0]
+        assessed_count = len(assessed_cands)
+        assessment_rate = (assessed_count / total_cands) * 100.0 if total_cands > 0 else 0.0
+        avg_assessment = sum(c["assessment_score"] for c in assessed_cands) / assessed_count if assessed_count > 0 else 0.0
+        
+        all_gaps = []
+        for c in all_cands:
+            all_gaps.extend(c["missing_skills"])
+        total_gaps_flagged = len(all_gaps)
+    else:
+        avg_match = 0.0
+        assessed_count = 0
+        assessment_rate = 0.0
+        avg_assessment = 0.0
+        total_gaps_flagged = 0
+        all_gaps = []
 
-    with st.spinner("📊 Step 3/4: Calculating weighted multi-factor match score..."):
-        try:
-            result = calculate_match_score(resume_data, jd_data, resume_text, jd_text)
-        except Exception as e:
-            st.error(f"Scoring calculation failed: {e}")
-            st.stop()
-
-    with st.spinner("🗣️ Step 4/4: Generating tailored mock interview questions..."):
-        try:
-            questions = generate_mock_questions(
-                resume_data, jd_data, result["skill_gap"]["missing_required"]
-            )
-        except Exception as e:
-            questions = [{"question": f"Question generation error: {e}", "type": "error", "tests": ""}]
-
-    # Cache state
-    st.session_state["resume_data"] = resume_data
-    st.session_state["jd_data"] = jd_data
-    st.session_state["result"] = result
-    st.session_state["questions"] = questions
-
-# ---------- SCREENING RESULTS DISPLAY ----------
-if "result" in st.session_state:
-    result = st.session_state["result"]
-    resume_data = st.session_state["resume_data"]
-    jd_data = st.session_state["jd_data"]
-    questions = st.session_state["questions"]
-
-    gap = result["skill_gap"]
-    b = result["breakdown"]
-    score = float(result["final_score"])
-
-    score_color = "#16a34a" if score >= 70 else ("#ca8a04" if score >= 45 else "#dc2626")
-    total_gaps = len(gap["missing_required"]) + len(gap["missing_preferred"])
-
-    st.markdown('<div class="section-heading">Screening Overview & Key Metrics</div>', unsafe_allow_html=True)
-
+    # 5 KPI Metric Cards
     k1, k2, k3, k4, k5 = st.columns(5)
     with k1:
         st.markdown(
-            f'<div class="kpi-card"><div class="kpi-label">Overall Match</div>'
-            f'<div class="kpi-value" style="color:{score_color}">{score:.0f}%</div>'
-            f'<div class="kpi-sub" style="color:{score_color}">Weighted Score</div></div>',
+            f"""
+        <div class="kpi-card">
+            <div class="kpi-title">TOTAL CANDIDATES</div>
+            <div class="kpi-num" style="color: #38BDF8;">{total_cands}</div>
+            <div class="kpi-footer" style="color: #0284C7;">Active Pipeline</div>
+        </div>
+        """,
             unsafe_allow_html=True,
         )
     with k2:
         st.markdown(
-            f'<div class="kpi-card"><div class="kpi-label">Skill Match</div>'
-            f'<div class="kpi-value" style="color:#4338ca">{b["skill_match"]:.0f}%</div>'
-            f'<div class="kpi-sub" style="color:#4338ca">Required Skills</div></div>',
+            f"""
+        <div class="kpi-card">
+            <div class="kpi-title">AVERAGE MATCH %</div>
+            <div class="kpi-num" style="color: #34D399;">{avg_match:.1f}%</div>
+            <div class="kpi-footer" style="color: #64748B;">Resume Screening</div>
+        </div>
+        """,
             unsafe_allow_html=True,
         )
     with k3:
         st.markdown(
-            f'<div class="kpi-card"><div class="kpi-label">Experience</div>'
-            f'<div class="kpi-value" style="color:#0891b2">{b["experience_match"]:.0f}%</div>'
-            f'<div class="kpi-sub" style="color:#0891b2">Years Alignment</div></div>',
+            f"""
+        <div class="kpi-card">
+            <div class="kpi-title">ASSESSMENT RATE</div>
+            <div class="kpi-num" style="color: #A78BFA;">{assessment_rate:.0f}%</div>
+            <div class="kpi-footer" style="color: #64748B;">{assessed_count}/{total_cands} Assessed</div>
+        </div>
+        """,
             unsafe_allow_html=True,
         )
     with k4:
         st.markdown(
-            f'<div class="kpi-card"><div class="kpi-label">Education</div>'
-            f'<div class="kpi-value" style="color:#16a34a">{b["education_match"]:.0f}%</div>'
-            f'<div class="kpi-sub" style="color:#16a34a">Degree Requirement</div></div>',
+            f"""
+        <div class="kpi-card">
+            <div class="kpi-title">AVG ASSESSMENT</div>
+            <div class="kpi-num" style="color: #38BDF8;">{avg_assessment:.1f}%</div>
+            <div class="kpi-footer" style="color: #10B981;">Interview Average</div>
+        </div>
+        """,
             unsafe_allow_html=True,
         )
     with k5:
         st.markdown(
-            f'<div class="kpi-card"><div class="kpi-label">Skill Gaps</div>'
-            f'<div class="kpi-value" style="color:#dc2626">{total_gaps}</div>'
-            f'<div class="kpi-sub" style="color:#dc2626">Total Missing</div></div>',
+            f"""
+        <div class="kpi-card">
+            <div class="kpi-title">SKILL GAPS FLAGGED</div>
+            <div class="kpi-num" style="color: #F87171;">{total_gaps_flagged}</div>
+            <div class="kpi-footer" style="color: #EA580C;">Missing Skills</div>
+        </div>
+        """,
             unsafe_allow_html=True,
         )
 
-    st.markdown('<div class="section-heading">Visual Analytics & Distribution</div>', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
+    # Section Heading
+    st.markdown('<div class="section-title">Cohort Analytics & Distribution Models</div>', unsafe_allow_html=True)
 
-    plotly_layout = dict(
-        height=260,
-        margin=dict(l=10, r=10, t=10, b=10),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(family="Inter", color="#111827", size=12),
+    # 3 Dark Plotly Charts side by side
+    ch1, ch2, ch3 = st.columns(3)
+
+    dark_layout = dict(
+        height=280,
+        margin=dict(l=10, r=10, t=20, b=20),
+        plot_bgcolor="#0E1626",
+        paper_bgcolor="#0E1626",
+        font=dict(family="Inter", color="#94A3B8", size=11),
     )
 
-    with c1:
-        st.markdown('<div class="chart-card"><div class="chart-title">Weighted Score Breakdown</div>', unsafe_allow_html=True)
-        categories = ["Skills (50%)", "Experience (25%)", "Education (15%)", "Semantic (10%)"]
-        values = [b["skill_match"], b["experience_match"], b["education_match"], b["semantic_similarity"]]
-        fig = go.Figure(
-            go.Bar(
-                x=categories,
-                y=values,
-                marker_color=["#0891b2", "#6366f1", "#16a34a", "#ec4899"],
-                text=[f"{v:.0f}%" for v in values],
-                textposition="outside",
+    # Chart 1: Candidate Match Score Distribution
+    with ch1:
+        st.markdown('<div class="chart-box"><div class="chart-title">Candidate Match Score Distribution</div>', unsafe_allow_html=True)
+        scores = [c["match_score"] for c in all_cands]
+        fig1 = go.Figure()
+        fig1.add_trace(
+            go.Histogram(
+                x=scores,
+                xbins=dict(start=0, end=100, size=5),
+                marker=dict(color="#38BDF8", line=dict(color="#0284C7", width=1)),
+                opacity=0.85,
             )
         )
-        fig.update_layout(
-            **plotly_layout,
-            yaxis=dict(range=[0, 115], gridcolor="#f1f5f9", tickfont=dict(color="#374151")),
-            xaxis=dict(showgrid=False, tickfont=dict(color="#111827", size=11)),
+        fig1.update_layout(
+            **dark_layout,
+            xaxis=dict(title="Match Score (%)", range=[0, 100], gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
+            yaxis=dict(title="Candidate Count", gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig1, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with c2:
-        st.markdown('<div class="chart-card"><div class="chart-title">Missing Skills Breakdown</div>', unsafe_allow_html=True)
-        missing_all = gap["missing_required"] + gap["missing_preferred"]
-        if missing_all:
-            colors = ["#dc2626"] * len(gap["missing_required"]) + ["#ca8a04"] * len(gap["missing_preferred"])
+    # Chart 2: Most Frequent Skill Gaps
+    with ch2:
+        st.markdown('<div class="chart-box"><div class="chart-title">Most Frequent Skill Gaps</div>', unsafe_allow_html=True)
+        gap_counts = Counter(all_gaps).most_common(5)
+        if gap_counts:
+            skills = [item[0] for item in reversed(gap_counts)]
+            counts = [item[1] for item in reversed(gap_counts)]
             fig2 = go.Figure(
                 go.Bar(
-                    x=[1] * len(missing_all),
-                    y=missing_all,
+                    x=counts,
+                    y=skills,
                     orientation="h",
-                    marker_color=colors,
+                    marker=dict(color="#EF4444"),
+                    text=counts,
+                    textposition="inside",
+                    textfont=dict(color="#FFFFFF", weight="bold"),
                 )
             )
             fig2.update_layout(
-                **plotly_layout,
-                xaxis=dict(visible=False),
-                yaxis=dict(gridcolor="#f1f5f9", tickfont=dict(color="#111827", size=12)),
+                **dark_layout,
+                xaxis=dict(title="Candidates Missing Skill", gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
+                yaxis=dict(gridcolor="#1E293B", tickfont=dict(color="#F8FAFC")),
             )
             st.plotly_chart(fig2, use_container_width=True)
         else:
-            st.success("🎉 No missing skills detected! Candidate possesses all required and preferred skills.")
+            st.info("No skill gaps flagged in candidate pool.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with c3:
-        st.markdown('<div class="chart-card"><div class="chart-title">Matched vs. Missing Skills Ratio</div>', unsafe_allow_html=True)
-        fig3 = go.Figure(
-            go.Pie(
-                labels=["Matched", "Missing Required", "Missing Preferred"],
-                values=[
-                    len(gap["matched"]),
-                    len(gap["missing_required"]),
-                    len(gap["missing_preferred"]),
-                ],
-                marker_colors=["#16a34a", "#dc2626", "#ca8a04"],
-                hole=0.55,
+    # Chart 3: Resume Match vs. Assessment Score
+    with ch3:
+        st.markdown('<div class="chart-box"><div class="chart-title">Resume Match vs. Assessment Score</div>', unsafe_allow_html=True)
+        screened = [c for c in all_cands if c["status"] == "Screened"]
+        assessed = [c for c in all_cands if c["status"] == "Assessed"]
+
+        fig3 = go.Figure()
+        if screened:
+            fig3.add_trace(
+                go.Scatter(
+                    x=[c["match_score"] for c in screened],
+                    y=[c["assessment_score"] for c in screened],
+                    mode="markers",
+                    name="Screened",
+                    marker=dict(size=9, color="#06B6D4", symbol="circle"),
+                )
             )
-        )
+        if assessed:
+            fig3.add_trace(
+                go.Scatter(
+                    x=[c["match_score"] for c in assessed],
+                    y=[c["assessment_score"] for c in assessed],
+                    mode="markers",
+                    name="Assessed",
+                    marker=dict(size=10, color="#10B981", symbol="circle"),
+                )
+            )
+
         fig3.update_layout(
-            **plotly_layout,
-            showlegend=True,
-            legend=dict(orientation="h", y=-0.15, font=dict(size=10, color="#111827")),
+            **dark_layout,
+            xaxis=dict(title="Resume Match (%)", range=[0, 105], gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
+            yaxis=dict(title="Assessment Score (%)", range=[-5, 105], gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
+            legend=dict(orientation="v", x=0.75, y=0.95, font=dict(color="#F8FAFC", size=10)),
         )
-        fig3.update_traces(textfont=dict(color="white", size=12))
         st.plotly_chart(fig3, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---------- TABBED DETAILS ----------
-    tab1, tab2, tab3 = st.tabs(["🧠 Extracted Profile", "🎯 Skill Gap Deep Dive", "🗣️ Mock Interview Coach"])
+    # Recent Candidates Table
+    st.markdown('<div class="section-title">Candidate Pipeline Stream</div>', unsafe_allow_html=True)
+    if all_cands:
+        table_data = []
+        for c in all_cands[:8]:
+            status_tag = "🟢 Assessed" if c["status"] == "Assessed" else "🔵 Screened"
+            gaps_formatted = ", ".join(c["missing_skills"][:2]) + ("..." if len(c["missing_skills"]) > 2 else "")
+            table_data.append(
+                {
+                    "Candidate": c["name"],
+                    "Target Role": c["role"],
+                    "Match Score": f"{c['match_score']:.1f}%",
+                    "Skill Match": f"{c['skill_match']:.0f}%",
+                    "Assessment": f"{c['assessment_score']:.1f}%" if c["status"] == "Assessed" else "Pending",
+                    "Primary Skill Gaps": gaps_formatted or "None",
+                    "Status": status_tag,
+                }
+            )
+        st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
 
-    with tab1:
-        st.markdown('<div class="section-heading" style="font-size:0.95rem;">🛠️ Extracted Candidate Skills</div>', unsafe_allow_html=True)
-        skills = resume_data.get("skills", [])
-        if skills:
-            skills_html = "".join([f'<span class="badge badge-matched">{s}</span>' for s in skills])
-            st.markdown(skills_html, unsafe_allow_html=True)
-        else:
-            st.info("No explicit skill list extracted.")
 
-        st.markdown('<div class="section-heading" style="font-size:0.95rem;">🎓 Education History</div>', unsafe_allow_html=True)
-        education_list = resume_data.get("education", [])
-        if education_list:
-            for edu in education_list:
-                st.markdown(
-                    f'<div class="exp-card"><div class="exp-title">{edu.get("degree", "Degree Not Specified")}</div>'
-                    f'<div class="exp-meta">{edu.get("institution", "Institution")} · {edu.get("year", "Year N/A")}</div></div>',
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.info("No formal education history detected.")
+# ==============================================================================
+# PAGE 2: RESUME ANALYZER
+# ==============================================================================
+elif page == "📄 Resume Analyzer":
+    st.markdown('<div class="eyebrow">SCREENING & INTELLIGENCE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Resume vs. Job Description Analyzer</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Extract structured candidate entities, compute multi-factor match scores, and automatically add to your candidate pipeline.</div>',
+        unsafe_allow_html=True,
+    )
 
-        st.markdown('<div class="section-heading" style="font-size:0.95rem;">💼 Work Experience</div>', unsafe_allow_html=True)
-        experience_list = resume_data.get("experience", [])
-        if experience_list:
-            for exp in experience_list:
-                st.markdown(
-                    f'<div class="exp-card"><div class="exp-title">{exp.get("title", "Position")}</div>'
-                    f'<div class="exp-meta">{exp.get("company", "Company")} · {exp.get("duration", "Duration N/A")}</div>'
-                    f'<div style="color:#374151; font-size:0.9rem;">{exp.get("description", "")}</div></div>',
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.info("No structured work experience detected.")
+    # Demo pre-fill if button was clicked
+    default_cand_name = "John Doe" if st.session_state.get("demo_loaded") else ""
+    default_cand_role = "Senior Full Stack Engineer" if st.session_state.get("demo_loaded") else ""
 
-    with tab2:
-        st.markdown('<div class="section-heading" style="font-size:0.95rem;">✅ Matched Skills</div>', unsafe_allow_html=True)
-        if gap["matched"]:
-            html_matched = "".join([f'<span class="badge badge-matched">{s}</span>' for s in gap["matched"]])
-            st.markdown(html_matched, unsafe_allow_html=True)
-        else:
-            st.markdown("*None identified*", unsafe_allow_html=True)
+    col_meta1, col_meta2 = st.columns(2)
+    with col_meta1:
+        candidate_name = st.text_input("Candidate Full Name", value=default_cand_name, placeholder="e.g. John Doe")
+    with col_meta2:
+        target_role = st.text_input("Target Job Title / Position", value=default_cand_role, placeholder="e.g. Senior Software Engineer")
 
-        st.markdown('<div class="section-heading" style="font-size:0.95rem;">❌ Missing Required Skills</div>', unsafe_allow_html=True)
-        if gap["missing_required"]:
-            html_req = "".join([f'<span class="badge badge-missing-required">{s}</span>' for s in gap["missing_required"]])
-            st.markdown(html_req, unsafe_allow_html=True)
-        else:
-            st.markdown("*None — excellent fit! All required skills matched.*", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**📎 Upload Candidate Resume**")
+        resume_file = st.file_uploader(
+            "Upload Resume (PDF, DOCX, TXT)",
+            type=["pdf", "docx", "txt"],
+            key="analyzer_resume_uploader",
+        )
 
-        st.markdown('<div class="section-heading" style="font-size:0.95rem;">⚠️ Missing Preferred Skills</div>', unsafe_allow_html=True)
-        if gap["missing_preferred"]:
-            html_pref = "".join([f'<span class="badge badge-missing-preferred">{s}</span>' for s in gap["missing_preferred"]])
-            st.markdown(html_pref, unsafe_allow_html=True)
-        else:
-            st.markdown("*None missing*", unsafe_allow_html=True)
+    with col2:
+        st.markdown("**💼 Job Description**")
+        jd_file = st.file_uploader(
+            "Upload JD Document (PDF, DOCX, TXT)",
+            type=["pdf", "docx", "txt"],
+            key="analyzer_jd_uploader",
+        )
+        jd_text_input = st.text_area(
+            "Or paste JD text directly:",
+            height=100,
+            placeholder="Paste required skills, experience level, and key responsibilities...",
+        )
 
-    with tab3:
-        st.markdown('<div class="section-heading" style="font-size:0.95rem;">🎯 Tailored AI Interview Questions</div>', unsafe_allow_html=True)
-        for i, q in enumerate(questions, 1):
-            raw_type = q.get("type", "technical").lower()
-            qtype = raw_type.replace(" ", "-")
-            if qtype not in ["technical", "behavioral", "role-fit", "error"]:
-                qtype = "technical"
+    st.write("")
+    analyze_btn = st.button("✨ Run Deep Match Analysis", type="primary")
 
+    if analyze_btn:
+        if not resume_file and not st.session_state.get("demo_loaded"):
+            st.error("Please upload a candidate resume.")
+            st.stop()
+        if not jd_file and not jd_text_input.strip() and not st.session_state.get("demo_loaded"):
+            st.error("Please upload a job description file or paste the JD text.")
+            st.stop()
+
+        with st.spinner("Extracting document content and executing AI analysis..."):
+            if st.session_state.get("demo_loaded") and not resume_file:
+                # Use demo candidate data
+                demo = db.DEMO_CANDIDATES[0]
+                resume_data = {
+                    "skills": ["Python", "JavaScript", "React", "Node.js", "Docker", "AWS", "SQL", "Git", "REST APIs"],
+                    "education": [{"degree": demo["education"], "institution": "Tech University", "year": "2020"}],
+                    "experience": [{"title": demo["role"], "company": "Tech Corp", "duration": "6.5 years", "description": "Designed cloud systems."}],
+                    "total_years_experience": demo["experience_years"],
+                }
+                jd_data = {
+                    "required_skills": ["Python", "React", "Node.js", "Docker", "Kubernetes", "AWS"],
+                    "preferred_skills": ["GraphQL", "CI/CD"],
+                    "required_experience_years": 5,
+                    "education_requirement": "B.S. Computer Science",
+                    "key_responsibilities": ["Lead development", "Architect distributed systems"],
+                }
+                resume_text = "Experienced Full Stack Engineer with Python, React, Node.js, Docker, AWS, and database skills."
+                jd_text = "Looking for a Senior Full Stack Engineer with Python, React, Docker, Kubernetes, AWS, GraphQL."
+            else:
+                resume_text = extract_text(resume_file)
+                jd_text = extract_text(jd_file) if jd_file else jd_text_input.strip()
+                resume_data = extract_resume_data(resume_text)
+                jd_data = extract_jd_data(jd_text)
+
+            result = calculate_match_score(resume_data, jd_data, resume_text, jd_text)
+            
+            # Auto-save to SQLite database
+            c_name = candidate_name.strip() or "Candidate " + str(total_cands + 1)
+            c_role = target_role.strip() or "Software Engineer"
+            db.add_candidate(
+                name=c_name,
+                role=c_role,
+                match_score=result["final_score"],
+                skill_match=result["breakdown"]["skill_match"],
+                experience_match=result["breakdown"]["experience_match"],
+                education_match=result["breakdown"]["education_match"],
+                semantic_similarity=result["breakdown"]["semantic_similarity"],
+                missing_skills=result["skill_gap"]["missing_required"] + result["skill_gap"]["missing_preferred"],
+                experience_years=resume_data.get("total_years_experience", 0.0),
+                education=resume_data.get("education", [{}])[0].get("degree", ""),
+            )
+
+            st.session_state["last_analysis"] = {
+                "name": c_name,
+                "role": c_role,
+                "resume_data": resume_data,
+                "jd_data": jd_data,
+                "result": result,
+            }
+            st.success(f"Analysis complete! Candidate '{c_name}' successfully added to Recruiter Database.")
+
+    if "last_analysis" in st.session_state:
+        analysis = st.session_state["last_analysis"]
+        result = analysis["result"]
+        b = result["breakdown"]
+        gap = result["skill_gap"]
+        final_score = result["final_score"]
+
+        st.markdown('<div class="section-title">Match Analysis Results</div>', unsafe_allow_html=True)
+        r1, r2, r3, r4 = st.columns(4)
+        with r1:
             st.markdown(
                 f"""
-            <div class="question-card">
-                <span class="q-type q-type-{qtype}">{q.get('type', 'Technical')}</span>
-                <div class="q-text">{i}. {q.get('question', '')}</div>
-                <div class="q-tests"><strong>Evaluation Goal:</strong> {q.get('tests', 'Assess candidate competency')}</div>
+            <div class="kpi-card">
+                <div class="kpi-title">OVERALL MATCH</div>
+                <div class="kpi-num" style="color: #34D399;">{final_score:.1f}%</div>
+                <div class="kpi-footer" style="color: #64748B;">Weighted Rating</div>
             </div>
             """,
                 unsafe_allow_html=True,
             )
+        with r2:
+            st.markdown(
+                f"""
+            <div class="kpi-card">
+                <div class="kpi-title">SKILL MATCH (50%)</div>
+                <div class="kpi-num" style="color: #38BDF8;">{b['skill_match']:.0f}%</div>
+                <div class="kpi-footer" style="color: #64748B;">Required Competencies</div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+        with r3:
+            st.markdown(
+                f"""
+            <div class="kpi-card">
+                <div class="kpi-title">EXPERIENCE (25%)</div>
+                <div class="kpi-num" style="color: #A78BFA;">{b['experience_match']:.0f}%</div>
+                <div class="kpi-footer" style="color: #64748B;">Tenure Match</div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+        with r4:
+            st.markdown(
+                f"""
+            <div class="kpi-card">
+                <div class="kpi-title">EDUCATION (15%)</div>
+                <div class="kpi-num" style="color: #FBBF24;">{b['education_match']:.0f}%</div>
+                <div class="kpi-footer" style="color: #64748B;">Degree Requirement</div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+        # Tabbed Breakdown
+        tab1, tab2, tab3 = st.tabs(["🎯 Skill Gap Detail", "🧠 Extracted Entities", "📊 Comparison Radar"])
+        with tab1:
+            st.markdown("**Matched Skills:**")
+            st.markdown("".join([f'<span class="badge badge-matched">{s}</span>' for s in gap["matched"]]) or "*None*", unsafe_allow_html=True)
+
+            st.markdown("<br>**Missing Required Skills:**", unsafe_allow_html=True)
+            st.markdown("".join([f'<span class="badge badge-missing-req">{s}</span>' for s in gap["missing_required"]]) or "*None (All Matched)*", unsafe_allow_html=True)
+
+            st.markdown("<br>**Missing Preferred Skills:**", unsafe_allow_html=True)
+            st.markdown("".join([f'<span class="badge badge-missing-pref">{s}</span>' for s in gap["missing_preferred"]]) or "*None*", unsafe_allow_html=True)
+
+        with tab2:
+            st.json(analysis["resume_data"])
+
+        with tab3:
+            radar_fig = go.Figure()
+            radar_fig.add_trace(
+                go.Scatterpolar(
+                    r=[b["skill_match"], b["experience_match"], b["education_match"], b["semantic_similarity"]],
+                    theta=["Skills", "Experience", "Education", "Semantic"],
+                    fill="toself",
+                    fillcolor="rgba(56, 189, 248, 0.2)",
+                    line=dict(color="#38BDF8", width=2),
+                    name=analysis["name"],
+                )
+            )
+            radar_fig.update_layout(
+                polar=dict(
+                    bgcolor="#0E1626",
+                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#1E293B", linecolor="#1E293B"),
+                    angularaxis=dict(gridcolor="#1E293B", linecolor="#1E293B"),
+                ),
+                paper_bgcolor="#0E1626",
+                font=dict(color="#F8FAFC"),
+                margin=dict(l=20, r=20, t=20, b=20),
+                height=300,
+            )
+            st.plotly_chart(radar_fig, use_container_width=True)
+
+
+# ==============================================================================
+# PAGE 3: CANDIDATE ASSESSMENT & MOCK INTERVIEW
+# ==============================================================================
+elif page == "🎯 Candidate Assessment":
+    st.markdown('<div class="eyebrow">INTERVIEW INTELLIGENCE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Candidate Assessment & Interview Studio</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Generate tailored interview questions targeting candidate skill gaps, record interview evaluations, and update the hiring pipeline.</div>',
+        unsafe_allow_html=True,
+    )
+
+    all_cands = db.get_all_candidates()
+    if not all_cands:
+        st.warning("No candidates found in database. Please add candidates via Resume Analyzer first.")
+    else:
+        candidate_names = [f"{c['id']} - {c['name']} ({c['role']})" for c in all_cands]
+        selected_option = st.selectbox("Select Candidate to Evaluate", candidate_names)
+        cand_id = int(selected_option.split(" - ")[0])
+        cand = next(c for c in all_cands if c["id"] == cand_id)
+
+        c1, c2 = st.columns([1, 1])
+        with c1:
+            st.markdown(
+                f"""
+            <div class="dark-card">
+                <div class="dark-card-title">{cand['name']}</div>
+                <div class="dark-card-meta">{cand['role']} · Match Score: <strong>{cand['match_score']:.1f}%</strong></div>
+                <div style="margin-top:8px;">
+                    <strong>Identified Skill Gaps:</strong><br>
+                    {' '.join([f'<span class=\"badge badge-missing-req\">{s}</span>' for s in cand['missing_skills']]) or 'None'}
+                </div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+        with c2:
+            st.markdown(
+                f"""
+            <div class="dark-card">
+                <div class="dark-card-title">Assessment Status: {cand['status']}</div>
+                <div class="dark-card-meta">Current Interview Score: <strong>{cand['assessment_score']:.1f}%</strong></div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+        st.markdown('<div class="section-title">Targeted AI Interview Questions</div>', unsafe_allow_html=True)
+        if st.button("⚡ Generate Tailored Questions for this Candidate"):
+            with st.spinner("Generating targeted questions via AI..."):
+                sample_resume = {"experience": [{"title": cand["role"], "company": "Previous Tech Co", "duration": f"{cand['experience_years']} years"}]}
+                sample_jd = {"key_responsibilities": ["Develop scalable backend microservices", "Manage cloud deployments"]}
+                questions = generate_mock_questions(sample_resume, sample_jd, cand["missing_skills"])
+                st.session_state[f"questions_{cand_id}"] = questions
+
+        questions = st.session_state.get(
+            f"questions_{cand_id}",
+            [
+                {
+                    "question": f"How have you worked around {cand['missing_skills'][0] if cand['missing_skills'] else 'new technologies'} in previous projects?",
+                    "type": "technical",
+                    "tests": "Adaptability and willingness to learn missing tools",
+                },
+                {
+                    "question": "Describe a scenario where you resolved a critical production incident under tight deadlines.",
+                    "type": "behavioral",
+                    "tests": "Problem solving, composure, and communication",
+                },
+                {
+                    "question": f"How does your past experience as {cand['role']} align with managing high-scale system reliability?",
+                    "type": "role-fit",
+                    "tests": "Domain familiarity and architecture understanding",
+                },
+            ],
+        )
+
+        for idx, q in enumerate(questions, 1):
+            st.markdown(
+                f"""
+            <div class="dark-card">
+                <span class="badge badge-matched" style="background:rgba(99,102,241,0.2); color:#A5B4FC; border-color:#6366F1;">{q.get('type', 'General').upper()}</span>
+                <div style="font-weight:700; color:#FFFFFF; margin: 6px 0 4px 0;">{idx}. {q.get('question')}</div>
+                <div style="color:#94A3B8; font-size:0.85rem; font-style:italic;">Evaluates: {q.get('tests')}</div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+        st.markdown('<div class="section-title">Submit Assessment Score</div>', unsafe_allow_html=True)
+        new_score = st.slider("Interview Performance Score (%)", min_value=0.0, max_value=100.0, value=float(cand["assessment_score"]) or 75.0, step=1.0)
+        
+        if st.button("💾 Save Assessment to Pipeline"):
+            db.update_candidate_assessment(cand_id, new_score, status="Assessed")
+            st.success(f"Candidate assessment updated to {new_score:.1f}%!")
+            st.rerun()
+
+
+# ==============================================================================
+# PAGE 4: RECRUITER DATABASE
+# ==============================================================================
+elif page == "👥 Recruiter Database":
+    st.markdown('<div class="eyebrow">TALENT REPOSITORY</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Recruiter Candidate Database</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Search, filter, inspect, and manage screened candidates stored in the local SQLite database.</div>',
+        unsafe_allow_html=True,
+    )
+
+    all_cands = db.get_all_candidates()
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        search_query = st.text_input("🔍 Search candidates by name or role", "")
+    with col2:
+        status_filter = st.selectbox("Filter by Status", ["All", "Screened", "Assessed"])
+
+    filtered_cands = all_cands
+    if search_query:
+        filtered_cands = [
+            c for c in filtered_cands
+            if search_query.lower() in c["name"].lower() or search_query.lower() in c["role"].lower()
+        ]
+    if status_filter != "All":
+        filtered_cands = [c for c in filtered_cands if c["status"] == status_filter]
+
+    st.markdown(f"**Showing {len(filtered_cands)} candidates**")
+
+    if filtered_cands:
+        df = pd.DataFrame(
+            [
+                {
+                    "ID": c["id"],
+                    "Name": c["name"],
+                    "Role": c["role"],
+                    "Match Score": f"{c['match_score']:.1f}%",
+                    "Skill Match": f"{c['skill_match']:.0f}%",
+                    "Experience": f"{c['experience_years']} yrs",
+                    "Education": c["education"],
+                    "Missing Skills": ", ".join(c["missing_skills"]),
+                    "Assessment": f"{c['assessment_score']:.1f}%" if c["status"] == "Assessed" else "Pending",
+                    "Status": c["status"],
+                }
+                for c in filtered_cands
+            ]
+        )
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
+        st.download_button(
+            "📥 Export Candidate Data as CSV",
+            data=df.to_csv(index=False),
+            file_name="recruiter_candidate_pipeline.csv",
+            mime="text/csv",
+        )
+
+
+# ==============================================================================
+# PAGE 5: REPORTS & COMPARISON
+# ==============================================================================
+elif page == "⚖️ Reports & Comparison":
+    st.markdown('<div class="eyebrow">HEAD-TO-HEAD BENCHMARKING</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Candidate Comparison & Benchmarks</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Compare candidate profiles, qualifications, match scores, and interview performance side by side.</div>',
+        unsafe_allow_html=True,
+    )
+
+    all_cands = db.get_all_candidates()
+    if len(all_cands) < 2:
+        st.info("Please have at least 2 candidates in the database to run side-by-side comparisons.")
+    else:
+        cand_map = {f"{c['name']} ({c['role']})": c for c in all_cands}
+        selected_cands = st.multiselect(
+            "Select 2 to 4 candidates to compare",
+            list(cand_map.keys()),
+            default=list(cand_map.keys())[:2],
+        )
+
+        if len(selected_cands) >= 2:
+            comp_data = [cand_map[name] for name in selected_cands]
+
+            # Radar Chart Overlay
+            radar = go.Figure()
+            colors = ["#38BDF8", "#34D399", "#A78BFA", "#FBBF24"]
+            for idx, c in enumerate(comp_data):
+                radar.add_trace(
+                    go.Scatterpolar(
+                        r=[c["match_score"], c["skill_match"], c["experience_match"], c["education_match"], c["assessment_score"]],
+                        theta=["Overall Match", "Skills", "Experience", "Education", "Assessment"],
+                        fill="toself",
+                        name=c["name"],
+                        line=dict(color=colors[idx % len(colors)], width=2),
+                    )
+                )
+            radar.update_layout(
+                polar=dict(
+                    bgcolor="#0E1626",
+                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#1E293B"),
+                    angularaxis=dict(gridcolor="#1E293B"),
+                ),
+                paper_bgcolor="#0E1626",
+                font=dict(color="#F8FAFC"),
+                margin=dict(l=20, r=20, t=20, b=20),
+                height=350,
+            )
+            st.plotly_chart(radar, use_container_width=True)
+
+            # Side by side columns
+            cols = st.columns(len(comp_data))
+            for i, c in enumerate(comp_data):
+                with cols[i]:
+                    st.markdown(
+                        f"""
+                    <div class="kpi-card" style="border-top: 4px solid {colors[i % len(colors)]};">
+                        <div class="kpi-title">{c['name']}</div>
+                        <div class="kpi-num" style="color:{colors[i % len(colors)]};">{c['match_score']:.1f}%</div>
+                        <div class="kpi-footer" style="color:#94A3B8;">{c['role']}</div>
+                        <hr style="border-color:#1E293B; margin: 12px 0;">
+                        <div style="font-size:0.85rem;">
+                            <div><strong>Skill Match:</strong> {c['skill_match']:.0f}%</div>
+                            <div><strong>Experience:</strong> {c['experience_years']} years</div>
+                            <div><strong>Assessment:</strong> {c['assessment_score']:.1f}%</div>
+                            <div style="margin-top:6px;"><strong>Missing:</strong><br>{', '.join(c['missing_skills']) or 'None'}</div>
+                        </div>
+                    </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+
+
+# ==============================================================================
+# PAGE 6: SETTINGS
+# ==============================================================================
+elif page == "⚙️ Settings":
+    st.markdown('<div class="eyebrow">CONFIGURATION & SYSTEM</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Platform Settings & AI Configuration</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Manage API keys, select default Groq LLM inference models, customize scoring weight ratios, and manage database state.</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="section-title">Groq Cloud AI Configuration</div>', unsafe_allow_html=True)
+    curr_key = get_groq_api_key() or ""
+    masked_key = (curr_key[:6] + "..." + curr_key[-4:]) if len(curr_key) > 10 else "Not Configured"
+    st.text_input("Active Groq API Key", value=masked_key, disabled=True)
+    st.caption("To update your key, edit `.streamlit/secrets.toml` with `GROQ_API_KEY = 'your_key'`.")
+
+    model_option = st.selectbox(
+        "Groq LLM Inference Model",
+        ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+        index=0,
+    )
+
+    st.markdown('<div class="section-title">Database Management</div>', unsafe_allow_html=True)
+    if st.button("🔄 Reset Candidate Database to Default Demo Pipeline"):
+        db.reset_database()
+        st.success("Candidate database has been reset with 10 demo candidates matching the dashboard!")
+        st.rerun()
