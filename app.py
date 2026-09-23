@@ -55,44 +55,87 @@ st.markdown(
 
     /* Nav Header */
     .nav-header {
-        color: #94A3B8;
-        font-size: 0.72rem;
-        font-weight: 800;
-        letter-spacing: 1.4px;
-        text-transform: uppercase;
-        margin: 1.2rem 0 0.6rem 0;
+        color: #0284C7 !important;
+        font-size: 0.78rem !important;
+        font-weight: 800 !important;
+        letter-spacing: 1.6px !important;
+        text-transform: uppercase !important;
+        margin: 1.4rem 0 0.8rem 0 !important;
+    }
+
+    /* Sidebar Navigation Radio Buttons */
+    div[data-testid="stRadio"] div[role="radiogroup"] {
+        gap: 6px !important;
+    }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label {
+        background-color: #F8FAFC !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 8px !important;
+        padding: 8px 12px !important;
+        margin-bottom: 4px !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:hover {
+        background-color: #F0F9FF !important;
+        border-color: #38BDF8 !important;
+    }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked) {
+        background-color: #E0F2FE !important;
+        border-color: #0284C7 !important;
+    }
+    div[data-testid="stRadio"] div[role="radiogroup"] label p,
+    div[data-testid="stRadio"] div[role="radiogroup"] label span,
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] label p,
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] label span {
+        color: #0F172A !important;
+        font-weight: 700 !important;
+        font-size: 0.92rem !important;
+        opacity: 1 !important;
+    }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked) p {
+        color: #0369A1 !important;
+        font-weight: 800 !important;
     }
 
     /* System Status Card in Sidebar */
     .status-card {
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
         border-radius: 10px;
-        padding: 12px 14px;
+        padding: 14px 16px;
         margin-top: 1.5rem;
-        font-size: 0.82rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     .status-card-title {
-        font-weight: 800;
-        color: #64748B;
-        font-size: 0.72rem;
-        letter-spacing: 1px;
+        font-weight: 800 !important;
+        color: #0F172A !important;
+        font-size: 0.78rem !important;
+        letter-spacing: 1.2px;
         text-transform: uppercase;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
     }
     .status-row {
         display: flex;
         justify-content: space-between;
-        color: #64748B;
-        margin-bottom: 5px;
+        color: #334155 !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        margin-bottom: 6px;
+    }
+    .status-row span:first-child {
+        color: #475569 !important;
+        font-weight: 600 !important;
     }
     .status-val-local {
-        color: #0284C7;
-        font-weight: 700;
+        color: #0284C7 !important;
+        font-weight: 800 !important;
     }
     .status-val-online {
-        color: #16A34A;
-        font-weight: 700;
+        color: #16A34A !important;
+        font-weight: 800 !important;
     }
 
     /* Typography */
