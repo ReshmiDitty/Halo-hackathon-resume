@@ -1537,19 +1537,34 @@ elif page == "🎯 Candidate Assessment":
             f"questions_{cand_id}",
             [
                 {
-                    "question": f"How have you worked around {cand['missing_skills'][0] if cand['missing_skills'] else 'new technologies'} in previous projects?",
+                    "question": f"How have you worked with or adapted to {cand['missing_skills'][0] if cand['missing_skills'] else 'new framework architectures'} in your previous projects?",
                     "type": "technical",
-                    "tests": "Adaptability and willingness to learn missing tools",
+                    "tests": "Technical adaptability, learning curve velocity, and self-directed problem solving",
                 },
                 {
-                    "question": "Describe a scenario where you resolved a critical production incident under tight deadlines.",
+                    "question": f"Can you explain the core design principles and architecture patterns you rely on when developing systems as a {cand['role']}?",
+                    "type": "technical",
+                    "tests": "System design depth, architectural maturity, and maintainability standards",
+                },
+                {
+                    "question": f"How do you approach performance profiling, latency reduction, and database optimization in production environments?",
+                    "type": "technical",
+                    "tests": "Hands-on debugging skills, scale readiness, and systems troubleshooting",
+                },
+                {
+                    "question": "Describe a scenario where you faced a critical production incident or technical disagreement with a team member under tight deadlines. How did you resolve it?",
                     "type": "behavioral",
-                    "tests": "Problem solving, composure, and communication",
+                    "tests": "Emotional composure, cross-functional communication, and resolution diplomacy",
                 },
                 {
-                    "question": f"How does your past experience as {cand['role']} align with managing high-scale system reliability?",
+                    "question": "Tell us about a challenging project where scope or client requirements shifted unexpectedly. How did you prioritize deliverables?",
+                    "type": "behavioral",
+                    "tests": "Agile prioritization, stakeholder alignment, and delivery ownership",
+                },
+                {
+                    "question": f"Given the responsibilities of a {cand['role']} at HIVE, how do your career aspirations and past experience align with our team's engineering vision?",
                     "type": "role-fit",
-                    "tests": "Domain familiarity and architecture understanding",
+                    "tests": "Long-term role alignment, motivation, and culture fit with team expectations",
                 },
             ],
         )

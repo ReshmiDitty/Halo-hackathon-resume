@@ -10,12 +10,12 @@ import re
 from typing import Any, Dict, List
 from extractor import get_groq_client, DEFAULT_MODEL
 
-QUESTION_PROMPT: str = """Based on this candidate's resume and the job description below, generate 5 targeted mock interview questions.
+QUESTION_PROMPT: str = """Based on this candidate's resume and the job description below, generate exactly 5 to 6 targeted mock interview questions.
 
 Question Distribution:
-- 2-3 Technical Questions (targeting missing required skills or deep-diving into matched core skills).
-- 1-2 Behavioral Questions (evaluating past projects, collaboration, or leadership).
-- 1 Role-Fit Question (evaluating alignment with key job responsibilities and company objectives).
+- 3 Technical Questions (targeting missing required skills or deep-diving into matched core skills, architecture, and coding principles).
+- 2 Behavioral Questions (evaluating conflict resolution, past project ownership, and team collaboration).
+- 1 Role-Fit Question (evaluating alignment with key day-to-day job responsibilities and company objectives).
 
 Return ONLY valid JSON (no markdown formatting, no code fences) as a list of objects:
 [
@@ -44,7 +44,7 @@ def generate_mock_questions(
     model: str = DEFAULT_MODEL,
 ) -> List[Dict[str, str]]:
     """
-    Generate targeted interview questions based on candidate data and skill gaps.
+    Generate 5 to 6 targeted interview questions based on candidate data and skill gaps.
 
     Args:
         resume_data: Structured resume dictionary containing experience and skills.
@@ -53,7 +53,7 @@ def generate_mock_questions(
         model: Target Groq LLM model name.
 
     Returns:
-        List[Dict[str, str]]: List of question dictionaries with 'question',
+        List[Dict[str, str]]: List of 5-6 question dictionaries with 'question',
                              'type', and 'tests' fields.
     """
     resume_summary = json.dumps(resume_data.get("experience", []))[:2000]
@@ -70,7 +70,7 @@ def generate_mock_questions(
         client = get_groq_client()
         response = client.chat.completions.create(
             model=model,
-            max_tokens=1500,
+            max_tokens=2000,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
         )
@@ -81,7 +81,9 @@ def generate_mock_questions(
             cleaned_text = re.sub(r"\s*```$", "", cleaned_text)
 
         parsed = json.loads(cleaned_text.strip())
-        if isinstance(parsed, list):
+        if isinstance(parsed, list) and len(parsed) >= 4:
+            return parsed
+        elif isinstance(parsed, list):
             return parsed
         return [{"question": "Failed to parse question list format.", "type": "error", "tests": ""}]
     except Exception as exc:
