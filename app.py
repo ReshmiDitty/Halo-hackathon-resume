@@ -256,32 +256,67 @@ st.markdown(
         margin-bottom: 0.4rem;
     }
 
-    /* File Uploader Dropzone and Uploaded Item Light Theme */
-    [data-testid="stFileUploader"] {
+    /* File Uploader Exhaustive Light Theme Styling */
+    div[data-testid="stFileUploader"],
+    div[data-testid="stFileUploader"] section,
+    div[data-testid="stFileUploader"] > div,
+    section[data-testid="stFileUploadDropzone"],
+    section[data-testid="stFileUploaderDropzone"],
+    div[data-testid="stFileUploadDropzone"],
+    div[data-testid="stFileUploaderDropzone"],
+    div[data-testid="stFileUploaderDropzone"] > div,
+    .stFileUploaderDropzone {
         background-color: #FFFFFF !important;
-        border: 1px dashed #94A3B8 !important;
-        border-radius: 10px !important;
-        padding: 12px !important;
-    }
-    [data-testid="stFileUploaderDropzone"] {
-        background-color: #F8FAFC !important;
-        border: 1px dashed #CBD5E1 !important;
-    }
-    [data-testid="stFileUploaderDropzone"] * {
-        color: #334155 !important;
-    }
-    [data-testid="stUploadedFile"] {
-        background-color: #F8FAFC !important;
-        border: 1px solid #E2E8F0 !important;
-        border-radius: 8px !important;
-    }
-    [data-testid="stUploadedFile"] * {
+        background: #FFFFFF !important;
         color: #0F172A !important;
+        border: 1px dashed #CBD5E1 !important;
+        border-radius: 10px !important;
+    }
+    
+    /* Uploaded file preview bar */
+    div[data-testid="stUploadedFile"],
+    div[data-testid="stUploadedFile"] > div,
+    div[data-testid="stUploadedFileData"],
+    [data-testid="stUploadedFile"],
+    [data-testid="stUploadedFile"] * {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        fill: #0F172A !important;
+    }
+    div[data-testid="stUploadedFile"] {
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        padding: 6px 12px !important;
+    }
+    div[data-testid="stUploadedFile"] small {
+        color: #64748B !important;
+    }
+    
+    /* Browse files button inside uploader */
+    div[data-testid="stFileUploader"] button {
+        background: #F1F5F9 !important;
+        color: #0F172A !important;
+        border: 1px solid #CBD5E1 !important;
+        font-weight: 700 !important;
+        border-radius: 6px !important;
+    }
+    div[data-testid="stFileUploader"] button:hover {
+        background: #E2E8F0 !important;
+        color: #0284C7 !important;
     }
 
     /* Inputs and Textareas Light Styling */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+    textarea[data-testid="stTextArea"],
+    .stTextArea textarea,
+    .stTextInput input,
+    div[data-baseweb="textarea"],
+    div[data-baseweb="textarea"] textarea,
+    div[data-baseweb="input"],
+    div[data-baseweb="input"] input {
         background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
         color: #0F172A !important;
         border: 1px solid #CBD5E1 !important;
         border-radius: 8px !important;
@@ -645,11 +680,48 @@ if page == "📊 Dashboard":
         st.plotly_chart(fig3, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Recent Candidates Clean Light Table
+    # Candidate Pipeline Stream with Filter & Sorting Controls
     st.markdown('<div class="section-title">Candidate Pipeline Stream</div>', unsafe_allow_html=True)
-    if all_cands:
+    
+    ctrl_col1, ctrl_col2 = st.columns([1, 1])
+    with ctrl_col1:
+        stream_filter = st.selectbox(
+            "Filter by Candidate Status:",
+            ["All Candidates", "Screened Only", "Assessed Only"],
+            key="stream_status_filter",
+        )
+    with ctrl_col2:
+        stream_sort = st.selectbox(
+            "Sort Candidate Order:",
+            [
+                "Highest Match Score First (High → Low)",
+                "Lowest Match Score First (Low → High)",
+                "Highest Assessment Score (High → Low)",
+                "Most Experience (Years)",
+            ],
+            key="stream_sort_order",
+        )
+
+    # Filter pipeline stream
+    displayed_cands = list(all_cands)
+    if stream_filter == "Screened Only":
+        displayed_cands = [c for c in displayed_cands if c["status"] == "Screened"]
+    elif stream_filter == "Assessed Only":
+        displayed_cands = [c for c in displayed_cands if c["status"] == "Assessed"]
+
+    # Sort pipeline stream
+    if stream_sort == "Highest Match Score First (High → Low)":
+        displayed_cands.sort(key=lambda c: c["match_score"], reverse=True)
+    elif stream_sort == "Lowest Match Score First (Low → High)":
+        displayed_cands.sort(key=lambda c: c["match_score"], reverse=False)
+    elif stream_sort == "Highest Assessment Score (High → Low)":
+        displayed_cands.sort(key=lambda c: c["assessment_score"], reverse=True)
+    elif stream_sort == "Most Experience (Years)":
+        displayed_cands.sort(key=lambda c: c["experience_years"], reverse=True)
+
+    if displayed_cands:
         table_rows = []
-        for c in all_cands[:8]:
+        for c in displayed_cands:
             status_html = (
                 '<span class="table-pill-assessed">● Assessed</span>'
                 if c["status"] == "Assessed"
@@ -660,16 +732,18 @@ if page == "📊 Dashboard":
             table_rows.append([
                 f"<strong>{html.escape(c['name'])}</strong>",
                 html.escape(c["role"]),
-                f"<span style='color:#0284C7; font-weight:700;'>{c['match_score']:.1f}%</span>",
+                f"<span style='color:#0284C7; font-weight:800; font-size:0.95rem;'>{c['match_score']:.1f}%</span>",
                 f"{c['skill_match']:.0f}%",
                 assess_text,
-                html.escape(gaps_text) or "<span style='color:#16A34A;'>None</span>",
+                html.escape(gaps_text) or "<span style='color:#16A34A; font-weight:600;'>None</span>",
                 status_html,
             ])
         render_light_table(
             headers=["Candidate", "Target Role", "Match Score", "Skill Match", "Assessment", "Primary Skill Gaps", "Status"],
             rows=table_rows,
         )
+    else:
+        st.info(f"No candidates match the selected filter ('{stream_filter}').")
 
 
 # ==============================================================================
