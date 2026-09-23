@@ -3,6 +3,7 @@ HALO Recruitment & Talent Intelligence Platform (v2.0).
 
 AI-powered candidate screening, talent cohort analytics, skill gap distributions,
 real-time multi-factor resume scoring, and mock interview assessment pipeline.
+Light Theme Edition.
 """
 
 import json
@@ -25,7 +26,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ---------- GLOBAL DARK THEME STYLING ----------
+# ---------- GLOBAL LIGHT THEME STYLING ----------
 st.markdown(
     """
 <style>
@@ -33,28 +34,28 @@ st.markdown(
     
     html, body, [class*="css"], .stApp {
         font-family: 'Inter', sans-serif;
-        background-color: #070B14 !important;
-        color: #E2E8F0 !important;
+        background-color: #F8FAFC !important;
+        color: #0F172A !important;
     }
 
-    /* Top header bar & deploy button adjustments */
+    /* Top header bar adjustment */
     header[data-testid="stHeader"] {
         background-color: transparent !important;
     }
 
-    /* Sidebar Dark Styling */
+    /* Sidebar Light Styling */
     section[data-testid="stSidebar"] {
-        background-color: #0B111E !important;
-        border-right: 1px solid #141F36 !important;
+        background-color: #FFFFFF !important;
+        border-right: 1px solid #E2E8F0 !important;
     }
     section[data-testid="stSidebar"] .block-container {
         padding-top: 1.2rem;
         padding-bottom: 2rem;
     }
 
-    /* Nav Labels & Buttons */
+    /* Nav Header */
     .nav-header {
-        color: #64748B;
+        color: #94A3B8;
         font-size: 0.72rem;
         font-weight: 800;
         letter-spacing: 1.4px;
@@ -64,8 +65,8 @@ st.markdown(
 
     /* System Status Card in Sidebar */
     .status-card {
-        background: #0E1626;
-        border: 1px solid #1E293B;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
         border-radius: 10px;
         padding: 12px 14px;
         margin-top: 1.5rem;
@@ -73,7 +74,7 @@ st.markdown(
     }
     .status-card-title {
         font-weight: 800;
-        color: #94A3B8;
+        color: #64748B;
         font-size: 0.72rem;
         letter-spacing: 1px;
         text-transform: uppercase;
@@ -82,21 +83,21 @@ st.markdown(
     .status-row {
         display: flex;
         justify-content: space-between;
-        color: #94A3B8;
+        color: #64748B;
         margin-bottom: 5px;
     }
     .status-val-local {
-        color: #38BDF8;
+        color: #0284C7;
         font-weight: 700;
     }
     .status-val-online {
-        color: #34D399;
+        color: #16A34A;
         font-weight: 700;
     }
 
     /* Typography */
     .eyebrow {
-        color: #38BDF8;
+        color: #0284C7;
         font-weight: 800;
         font-size: 0.8rem;
         letter-spacing: 2px;
@@ -104,34 +105,28 @@ st.markdown(
         margin-bottom: 8px;
     }
     .main-title {
-        font-size: 2.4rem;
+        font-size: 2.3rem;
         font-weight: 800;
-        color: #FFFFFF;
+        color: #0F172A;
         margin-bottom: 6px;
         line-height: 1.2;
     }
     .subtitle {
-        color: #94A3B8;
+        color: #64748B;
         font-size: 1rem;
         margin-bottom: 2rem;
     }
 
     /* Metric KPI Cards */
-    .kpi-container {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 14px;
-        margin-bottom: 2rem;
-    }
     .kpi-card {
-        background: #0E1626;
-        border: 1px solid #1E293B;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
         border-radius: 12px;
         padding: 1.1rem 1.2rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     .kpi-title {
-        color: #94A3B8;
+        color: #64748B;
         font-size: 0.72rem;
         font-weight: 800;
         letter-spacing: 0.8px;
@@ -153,22 +148,22 @@ st.markdown(
     .section-title {
         font-size: 1.25rem;
         font-weight: 800;
-        color: #F8FAFC;
+        color: #0F172A;
         margin: 2rem 0 1.2rem 0;
     }
 
     /* Chart Containers */
     .chart-box {
-        background: #0E1626;
-        border: 1px solid #1E293B;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
         border-radius: 12px;
         padding: 1rem 1rem 0.2rem 1rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     .chart-title {
         font-size: 0.92rem;
         font-weight: 700;
-        color: #F8FAFC;
+        color: #0F172A;
         margin-bottom: 0.5rem;
     }
 
@@ -182,61 +177,62 @@ st.markdown(
         margin: 3px 4px 3px 0;
     }
     .badge-matched {
-        background: rgba(34, 197, 94, 0.15);
-        color: #4ADE80;
-        border: 1px solid rgba(34, 197, 94, 0.3);
+        background: #DCFCE7;
+        color: #15803D;
+        border: 1px solid #86EFAC;
     }
     .badge-missing-req {
-        background: rgba(239, 68, 68, 0.15);
-        color: #F87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: #FEE2E2;
+        color: #B91C1C;
+        border: 1px solid #FCA5A5;
     }
     .badge-missing-pref {
-        background: rgba(234, 179, 8, 0.15);
-        color: #FACC15;
-        border: 1px solid rgba(234, 179, 8, 0.3);
+        background: #FEF9C3;
+        color: #A16207;
+        border: 1px solid #FDE047;
     }
 
     /* Cards */
-    .dark-card {
-        background: #0E1626;
-        border: 1px solid #1E293B;
+    .light-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
         border-radius: 10px;
         padding: 1rem 1.2rem;
         margin-bottom: 0.8rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
-    .dark-card-title {
+    .light-card-title {
         font-weight: 700;
-        color: #F8FAFC;
+        color: #0F172A;
         font-size: 1rem;
     }
-    .dark-card-meta {
-        color: #94A3B8;
+    .light-card-meta {
+        color: #64748B;
         font-size: 0.85rem;
         margin-bottom: 0.3rem;
     }
 
-    /* Streamlit widgets dark styling */
+    /* Streamlit widgets light styling */
     .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-        background-color: #0E1626 !important;
-        color: #F8FAFC !important;
-        border: 1px solid #1E293B !important;
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 1px solid #CBD5E1 !important;
     }
     .stSelectbox>div>div {
-        background-color: #0E1626 !important;
-        color: #F8FAFC !important;
-        border: 1px solid #1E293B !important;
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 1px solid #CBD5E1 !important;
     }
     div[data-testid="stFileUploader"] {
-        background-color: #0E1626 !important;
-        border: 1px dashed #334155 !important;
+        background-color: #FFFFFF !important;
+        border: 1px dashed #CBD5E1 !important;
         border-radius: 10px;
         padding: 10px;
     }
     
     /* Primary buttons */
     .stButton>button {
-        background: linear-gradient(90deg, #0284C7, #6366F1) !important;
+        background: linear-gradient(90deg, #0284C7, #4F46E5) !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
         border: none !important;
@@ -247,7 +243,7 @@ st.markdown(
     .stButton>button:hover {
         opacity: 0.92;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
     }
 </style>
 """,
@@ -284,7 +280,7 @@ with st.sidebar:
     has_api_key = bool(get_groq_api_key())
 
     ai_engine_text = "GROQ CLOUD" if has_api_key else "LOCAL FALLBACK"
-    ai_engine_color = "#38BDF8" if has_api_key else "#FACC15"
+    ai_engine_color = "#0284C7" if has_api_key else "#D97706"
 
     st.markdown(
         f"""
@@ -292,14 +288,14 @@ with st.sidebar:
         <div class="status-card-title">SYSTEM STATUS</div>
         <div class="status-row"><span>AI Engine:</span><span class="status-val-local" style="color:{ai_engine_color};">{ai_engine_text}</span></div>
         <div class="status-row"><span>Database:</span><span class="status-val-online">SQLite Online</span></div>
-        <div class="status-row"><span>Candidates:</span><span style="font-weight:700; color:#F8FAFC;">{candidate_count}</span></div>
+        <div class="status-row"><span>Candidates:</span><span style="font-weight:700; color:#0F172A;">{candidate_count}</span></div>
     </div>
     """,
         unsafe_allow_html=True,
     )
 
     st.markdown(
-        '<div style="color:#475569; font-size:0.75rem; text-align:center; margin-top:2rem;">HALO Platform v2.0 • AI Recruitment</div>',
+        '<div style="color:#94A3B8; font-size:0.75rem; text-align:center; margin-top:2rem;">HALO Platform v2.0 • AI Recruitment</div>',
         unsafe_allow_html=True,
     )
 
@@ -337,15 +333,15 @@ if page == "📊 Dashboard":
         total_gaps_flagged = 0
         all_gaps = []
 
-    # 5 KPI Metric Cards
+    # 5 KPI Metric Cards (Light Theme)
     k1, k2, k3, k4, k5 = st.columns(5)
     with k1:
         st.markdown(
             f"""
         <div class="kpi-card">
             <div class="kpi-title">TOTAL CANDIDATES</div>
-            <div class="kpi-num" style="color: #38BDF8;">{total_cands}</div>
-            <div class="kpi-footer" style="color: #0284C7;">Active Pipeline</div>
+            <div class="kpi-num" style="color: #0284C7;">{total_cands}</div>
+            <div class="kpi-footer" style="color: #0369A1;">Active Pipeline</div>
         </div>
         """,
             unsafe_allow_html=True,
@@ -355,7 +351,7 @@ if page == "📊 Dashboard":
             f"""
         <div class="kpi-card">
             <div class="kpi-title">AVERAGE MATCH %</div>
-            <div class="kpi-num" style="color: #34D399;">{avg_match:.1f}%</div>
+            <div class="kpi-num" style="color: #16A34A;">{avg_match:.1f}%</div>
             <div class="kpi-footer" style="color: #64748B;">Resume Screening</div>
         </div>
         """,
@@ -366,7 +362,7 @@ if page == "📊 Dashboard":
             f"""
         <div class="kpi-card">
             <div class="kpi-title">ASSESSMENT RATE</div>
-            <div class="kpi-num" style="color: #A78BFA;">{assessment_rate:.0f}%</div>
+            <div class="kpi-num" style="color: #7C3AED;">{assessment_rate:.0f}%</div>
             <div class="kpi-footer" style="color: #64748B;">{assessed_count}/{total_cands} Assessed</div>
         </div>
         """,
@@ -377,8 +373,8 @@ if page == "📊 Dashboard":
             f"""
         <div class="kpi-card">
             <div class="kpi-title">AVG ASSESSMENT</div>
-            <div class="kpi-num" style="color: #38BDF8;">{avg_assessment:.1f}%</div>
-            <div class="kpi-footer" style="color: #10B981;">Interview Average</div>
+            <div class="kpi-num" style="color: #0D9488;">{avg_assessment:.1f}%</div>
+            <div class="kpi-footer" style="color: #059669;">Interview Average</div>
         </div>
         """,
             unsafe_allow_html=True,
@@ -388,8 +384,8 @@ if page == "📊 Dashboard":
             f"""
         <div class="kpi-card">
             <div class="kpi-title">SKILL GAPS FLAGGED</div>
-            <div class="kpi-num" style="color: #F87171;">{total_gaps_flagged}</div>
-            <div class="kpi-footer" style="color: #EA580C;">Missing Skills</div>
+            <div class="kpi-num" style="color: #DC2626;">{total_gaps_flagged}</div>
+            <div class="kpi-footer" style="color: #C2410C;">Missing Skills</div>
         </div>
         """,
             unsafe_allow_html=True,
@@ -398,15 +394,15 @@ if page == "📊 Dashboard":
     # Section Heading
     st.markdown('<div class="section-title">Cohort Analytics & Distribution Models</div>', unsafe_allow_html=True)
 
-    # 3 Dark Plotly Charts side by side
+    # 3 Light Plotly Charts side by side
     ch1, ch2, ch3 = st.columns(3)
 
-    dark_layout = dict(
+    light_layout = dict(
         height=280,
         margin=dict(l=10, r=10, t=20, b=20),
-        plot_bgcolor="#0E1626",
-        paper_bgcolor="#0E1626",
-        font=dict(family="Inter", color="#94A3B8", size=11),
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor="#FFFFFF",
+        font=dict(family="Inter", color="#475569", size=11),
     )
 
     # Chart 1: Candidate Match Score Distribution
@@ -418,14 +414,14 @@ if page == "📊 Dashboard":
             go.Histogram(
                 x=scores,
                 xbins=dict(start=0, end=100, size=5),
-                marker=dict(color="#38BDF8", line=dict(color="#0284C7", width=1)),
-                opacity=0.85,
+                marker=dict(color="#0284C7", line=dict(color="#0369A1", width=1)),
+                opacity=0.9,
             )
         )
         fig1.update_layout(
-            **dark_layout,
-            xaxis=dict(title="Match Score (%)", range=[0, 100], gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
-            yaxis=dict(title="Candidate Count", gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
+            **light_layout,
+            xaxis=dict(title="Match Score (%)", range=[0, 100], gridcolor="#F1F5F9", tickfont=dict(color="#475569")),
+            yaxis=dict(title="Candidate Count", gridcolor="#F1F5F9", tickfont=dict(color="#475569")),
         )
         st.plotly_chart(fig1, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -449,9 +445,9 @@ if page == "📊 Dashboard":
                 )
             )
             fig2.update_layout(
-                **dark_layout,
-                xaxis=dict(title="Candidates Missing Skill", gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
-                yaxis=dict(gridcolor="#1E293B", tickfont=dict(color="#F8FAFC")),
+                **light_layout,
+                xaxis=dict(title="Candidates Missing Skill", gridcolor="#F1F5F9", tickfont=dict(color="#475569")),
+                yaxis=dict(gridcolor="#F1F5F9", tickfont=dict(color="#0F172A")),
             )
             st.plotly_chart(fig2, use_container_width=True)
         else:
@@ -472,7 +468,7 @@ if page == "📊 Dashboard":
                     y=[c["assessment_score"] for c in screened],
                     mode="markers",
                     name="Screened",
-                    marker=dict(size=9, color="#06B6D4", symbol="circle"),
+                    marker=dict(size=9, color="#0284C7", symbol="circle"),
                 )
             )
         if assessed:
@@ -482,15 +478,15 @@ if page == "📊 Dashboard":
                     y=[c["assessment_score"] for c in assessed],
                     mode="markers",
                     name="Assessed",
-                    marker=dict(size=10, color="#10B981", symbol="circle"),
+                    marker=dict(size=10, color="#16A34A", symbol="circle"),
                 )
             )
 
         fig3.update_layout(
-            **dark_layout,
-            xaxis=dict(title="Resume Match (%)", range=[0, 105], gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
-            yaxis=dict(title="Assessment Score (%)", range=[-5, 105], gridcolor="#1E293B", tickfont=dict(color="#94A3B8")),
-            legend=dict(orientation="v", x=0.75, y=0.95, font=dict(color="#F8FAFC", size=10)),
+            **light_layout,
+            xaxis=dict(title="Resume Match (%)", range=[0, 105], gridcolor="#F1F5F9", tickfont=dict(color="#475569")),
+            yaxis=dict(title="Assessment Score (%)", range=[-5, 105], gridcolor="#F1F5F9", tickfont=dict(color="#475569")),
+            legend=dict(orientation="v", x=0.75, y=0.95, font=dict(color="#0F172A", size=10)),
         )
         st.plotly_chart(fig3, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -572,7 +568,6 @@ elif page == "📄 Resume Analyzer":
 
         with st.spinner("Extracting document content and executing AI analysis..."):
             if st.session_state.get("demo_loaded") and not resume_file:
-                # Use demo candidate data
                 demo = db.DEMO_CANDIDATES[0]
                 resume_data = {
                     "skills": ["Python", "JavaScript", "React", "Node.js", "Docker", "AWS", "SQL", "Git", "REST APIs"],
@@ -636,7 +631,7 @@ elif page == "📄 Resume Analyzer":
                 f"""
             <div class="kpi-card">
                 <div class="kpi-title">OVERALL MATCH</div>
-                <div class="kpi-num" style="color: #34D399;">{final_score:.1f}%</div>
+                <div class="kpi-num" style="color: #16A34A;">{final_score:.1f}%</div>
                 <div class="kpi-footer" style="color: #64748B;">Weighted Rating</div>
             </div>
             """,
@@ -647,7 +642,7 @@ elif page == "📄 Resume Analyzer":
                 f"""
             <div class="kpi-card">
                 <div class="kpi-title">SKILL MATCH (50%)</div>
-                <div class="kpi-num" style="color: #38BDF8;">{b['skill_match']:.0f}%</div>
+                <div class="kpi-num" style="color: #0284C7;">{b['skill_match']:.0f}%</div>
                 <div class="kpi-footer" style="color: #64748B;">Required Competencies</div>
             </div>
             """,
@@ -658,7 +653,7 @@ elif page == "📄 Resume Analyzer":
                 f"""
             <div class="kpi-card">
                 <div class="kpi-title">EXPERIENCE (25%)</div>
-                <div class="kpi-num" style="color: #A78BFA;">{b['experience_match']:.0f}%</div>
+                <div class="kpi-num" style="color: #7C3AED;">{b['experience_match']:.0f}%</div>
                 <div class="kpi-footer" style="color: #64748B;">Tenure Match</div>
             </div>
             """,
@@ -669,7 +664,7 @@ elif page == "📄 Resume Analyzer":
                 f"""
             <div class="kpi-card">
                 <div class="kpi-title">EDUCATION (15%)</div>
-                <div class="kpi-num" style="color: #FBBF24;">{b['education_match']:.0f}%</div>
+                <div class="kpi-num" style="color: #D97706;">{b['education_match']:.0f}%</div>
                 <div class="kpi-footer" style="color: #64748B;">Degree Requirement</div>
             </div>
             """,
@@ -698,19 +693,19 @@ elif page == "📄 Resume Analyzer":
                     r=[b["skill_match"], b["experience_match"], b["education_match"], b["semantic_similarity"]],
                     theta=["Skills", "Experience", "Education", "Semantic"],
                     fill="toself",
-                    fillcolor="rgba(56, 189, 248, 0.2)",
-                    line=dict(color="#38BDF8", width=2),
+                    fillcolor="rgba(2, 132, 199, 0.15)",
+                    line=dict(color="#0284C7", width=2),
                     name=analysis["name"],
                 )
             )
             radar_fig.update_layout(
                 polar=dict(
-                    bgcolor="#0E1626",
-                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#1E293B", linecolor="#1E293B"),
-                    angularaxis=dict(gridcolor="#1E293B", linecolor="#1E293B"),
+                    bgcolor="#FFFFFF",
+                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#F1F5F9", linecolor="#CBD5E1"),
+                    angularaxis=dict(gridcolor="#F1F5F9", linecolor="#CBD5E1"),
                 ),
-                paper_bgcolor="#0E1626",
-                font=dict(color="#F8FAFC"),
+                paper_bgcolor="#FFFFFF",
+                font=dict(color="#0F172A"),
                 margin=dict(l=20, r=20, t=20, b=20),
                 height=300,
             )
@@ -741,9 +736,9 @@ elif page == "🎯 Candidate Assessment":
         with c1:
             st.markdown(
                 f"""
-            <div class="dark-card">
-                <div class="dark-card-title">{cand['name']}</div>
-                <div class="dark-card-meta">{cand['role']} · Match Score: <strong>{cand['match_score']:.1f}%</strong></div>
+            <div class="light-card">
+                <div class="light-card-title">{cand['name']}</div>
+                <div class="light-card-meta">{cand['role']} · Match Score: <strong>{cand['match_score']:.1f}%</strong></div>
                 <div style="margin-top:8px;">
                     <strong>Identified Skill Gaps:</strong><br>
                     {' '.join([f'<span class=\"badge badge-missing-req\">{s}</span>' for s in cand['missing_skills']]) or 'None'}
@@ -756,9 +751,9 @@ elif page == "🎯 Candidate Assessment":
         with c2:
             st.markdown(
                 f"""
-            <div class="dark-card">
-                <div class="dark-card-title">Assessment Status: {cand['status']}</div>
-                <div class="dark-card-meta">Current Interview Score: <strong>{cand['assessment_score']:.1f}%</strong></div>
+            <div class="light-card">
+                <div class="light-card-title">Assessment Status: {cand['status']}</div>
+                <div class="light-card-meta">Current Interview Score: <strong>{cand['assessment_score']:.1f}%</strong></div>
             </div>
             """,
                 unsafe_allow_html=True,
@@ -796,10 +791,10 @@ elif page == "🎯 Candidate Assessment":
         for idx, q in enumerate(questions, 1):
             st.markdown(
                 f"""
-            <div class="dark-card">
-                <span class="badge badge-matched" style="background:rgba(99,102,241,0.2); color:#A5B4FC; border-color:#6366F1;">{q.get('type', 'General').upper()}</span>
-                <div style="font-weight:700; color:#FFFFFF; margin: 6px 0 4px 0;">{idx}. {q.get('question')}</div>
-                <div style="color:#94A3B8; font-size:0.85rem; font-style:italic;">Evaluates: {q.get('tests')}</div>
+            <div class="light-card">
+                <span class="badge badge-matched" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE;">{q.get('type', 'General').upper()}</span>
+                <div style="font-weight:700; color:#0F172A; margin: 6px 0 4px 0;">{idx}. {q.get('question')}</div>
+                <div style="color:#64748B; font-size:0.85rem; font-style:italic;">Evaluates: {q.get('tests')}</div>
             </div>
             """,
                 unsafe_allow_html=True,
@@ -899,7 +894,7 @@ elif page == "⚖️ Reports & Comparison":
 
             # Radar Chart Overlay
             radar = go.Figure()
-            colors = ["#38BDF8", "#34D399", "#A78BFA", "#FBBF24"]
+            colors = ["#0284C7", "#16A34A", "#7C3AED", "#D97706"]
             for idx, c in enumerate(comp_data):
                 radar.add_trace(
                     go.Scatterpolar(
@@ -912,12 +907,12 @@ elif page == "⚖️ Reports & Comparison":
                 )
             radar.update_layout(
                 polar=dict(
-                    bgcolor="#0E1626",
-                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#1E293B"),
-                    angularaxis=dict(gridcolor="#1E293B"),
+                    bgcolor="#FFFFFF",
+                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#F1F5F9"),
+                    angularaxis=dict(gridcolor="#F1F5F9"),
                 ),
-                paper_bgcolor="#0E1626",
-                font=dict(color="#F8FAFC"),
+                paper_bgcolor="#FFFFFF",
+                font=dict(color="#0F172A"),
                 margin=dict(l=20, r=20, t=20, b=20),
                 height=350,
             )
@@ -932,9 +927,9 @@ elif page == "⚖️ Reports & Comparison":
                     <div class="kpi-card" style="border-top: 4px solid {colors[i % len(colors)]};">
                         <div class="kpi-title">{c['name']}</div>
                         <div class="kpi-num" style="color:{colors[i % len(colors)]};">{c['match_score']:.1f}%</div>
-                        <div class="kpi-footer" style="color:#94A3B8;">{c['role']}</div>
-                        <hr style="border-color:#1E293B; margin: 12px 0;">
-                        <div style="font-size:0.85rem;">
+                        <div class="kpi-footer" style="color:#64748B;">{c['role']}</div>
+                        <hr style="border-color:#E2E8F0; margin: 12px 0;">
+                        <div style="font-size:0.85rem; color:#334155;">
                             <div><strong>Skill Match:</strong> {c['skill_match']:.0f}%</div>
                             <div><strong>Experience:</strong> {c['experience_years']} years</div>
                             <div><strong>Assessment:</strong> {c['assessment_score']:.1f}%</div>
