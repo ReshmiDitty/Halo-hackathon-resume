@@ -324,11 +324,40 @@ st.markdown(
     .stTextInput>div>div>input::placeholder, .stTextArea>div>div>textarea::placeholder {
         color: #94A3B8 !important;
     }
-    .stSelectbox>div>div {
+    /* Complete Dropdown & Popover Light Styling */
+    div[data-baseweb="select"],
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] > div,
+    ul[role="listbox"],
+    li[role="option"],
+    div[data-baseweb="menu"],
+    div[data-baseweb="menu"] * {
         background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
         color: #0F172A !important;
+    }
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] div,
+    div[data-baseweb="select"] input {
+        color: #0F172A !important;
+        font-weight: 600 !important;
+    }
+    li[role="option"] {
+        padding: 10px 14px !important;
+        font-size: 0.9rem !important;
+        color: #0F172A !important;
+    }
+    li[role="option"]:hover,
+    li[role="option"][aria-selected="true"] {
+        background-color: #F0F9FF !important;
+        color: #0284C7 !important;
+        font-weight: 700 !important;
+    }
+    ul[role="listbox"] {
         border: 1px solid #CBD5E1 !important;
         border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
     }
 
     /* Light Theme Data Table */
@@ -680,43 +709,66 @@ if page == "📊 Dashboard":
         st.plotly_chart(fig3, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Candidate Pipeline Stream with Filter & Sorting Controls
+    # Candidate Pipeline Stream with Interactive Clickable Pills & Filter Toolbar
     st.markdown('<div class="section-title">Candidate Pipeline Stream</div>', unsafe_allow_html=True)
     
-    ctrl_col1, ctrl_col2 = st.columns([1, 1])
+    screened_count = len([c for c in all_cands if c["status"] == "Screened"])
+    assessed_count = len([c for c in all_cands if c["status"] == "Assessed"])
+
+    ctrl_col1, ctrl_col2 = st.columns([1.1, 1.1])
     with ctrl_col1:
-        stream_filter = st.selectbox(
-            "Filter by Candidate Status:",
-            ["All Candidates", "Screened Only", "Assessed Only"],
-            key="stream_status_filter",
-        )
+        st.markdown("<span style='font-size:0.82rem; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.8px;'>Filter Status</span>", unsafe_allow_html=True)
+        if hasattr(st, "pills"):
+            stream_filter = st.pills(
+                "Filter Status",
+                options=[f"All ({len(all_cands)})", f"Screened ({screened_count})", f"Assessed ({assessed_count})"],
+                default=f"All ({len(all_cands)})",
+                label_visibility="collapsed",
+                key="pipeline_pills_filter",
+            )
+        else:
+            stream_filter = st.radio(
+                "Filter Status",
+                options=[f"All ({len(all_cands)})", f"Screened ({screened_count})", f"Assessed ({assessed_count})"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="pipeline_radio_filter",
+            )
+
     with ctrl_col2:
-        stream_sort = st.selectbox(
-            "Sort Candidate Order:",
-            [
-                "Highest Match Score First (High → Low)",
-                "Lowest Match Score First (Low → High)",
-                "Highest Assessment Score (High → Low)",
-                "Most Experience (Years)",
-            ],
-            key="stream_sort_order",
-        )
+        st.markdown("<span style='font-size:0.82rem; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.8px;'>Sort Candidates</span>", unsafe_allow_html=True)
+        if hasattr(st, "pills"):
+            stream_sort = st.pills(
+                "Sort Order",
+                options=["🏆 Highest Match", "📉 Lowest Match", "🎯 Top Assessment", "⏳ Experience"],
+                default="🏆 Highest Match",
+                label_visibility="collapsed",
+                key="pipeline_pills_sort",
+            )
+        else:
+            stream_sort = st.radio(
+                "Sort Order",
+                options=["🏆 Highest Match", "📉 Lowest Match", "🎯 Top Assessment", "⏳ Experience"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="pipeline_radio_sort",
+            )
 
     # Filter pipeline stream
     displayed_cands = list(all_cands)
-    if stream_filter == "Screened Only":
+    if stream_filter and "Screened" in stream_filter:
         displayed_cands = [c for c in displayed_cands if c["status"] == "Screened"]
-    elif stream_filter == "Assessed Only":
+    elif stream_filter and "Assessed" in stream_filter:
         displayed_cands = [c for c in displayed_cands if c["status"] == "Assessed"]
 
     # Sort pipeline stream
-    if stream_sort == "Highest Match Score First (High → Low)":
+    if stream_sort in ["🏆 Highest Match", "Highest Match Score First (High → Low)"]:
         displayed_cands.sort(key=lambda c: c["match_score"], reverse=True)
-    elif stream_sort == "Lowest Match Score First (Low → High)":
+    elif stream_sort in ["📉 Lowest Match", "Lowest Match Score First (Low → High)"]:
         displayed_cands.sort(key=lambda c: c["match_score"], reverse=False)
-    elif stream_sort == "Highest Assessment Score (High → Low)":
+    elif stream_sort in ["🎯 Top Assessment", "Highest Assessment Score (High → Low)"]:
         displayed_cands.sort(key=lambda c: c["assessment_score"], reverse=True)
-    elif stream_sort == "Most Experience (Years)":
+    elif stream_sort in ["⏳ Experience", "Most Experience (Years)"]:
         displayed_cands.sort(key=lambda c: c["experience_years"], reverse=True)
 
     if displayed_cands:
