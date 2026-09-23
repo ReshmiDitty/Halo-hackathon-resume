@@ -6,7 +6,14 @@
 [![Sentence Transformers](https://img.shields.io/badge/Embeddings-all--MiniLM--L6--v2-green.svg)](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
-An intelligent, full-stack recruitment intelligence platform that analyzes candidate resumes against job descriptions (JDs) in real time. It delivers weighted multi-factor match scoring, deep skill gap analytics, and AI-generated mock interview questions tailored to the candidate's exact profile gaps.
+An intelligent, full-stack recruitment intelligence platform that analyzes candidate resumes against job descriptions (JDs) in real time. It delivers weighted multi-factor match scoring, deep skill gap analytics, interactive cohort distributions, and AI-generated mock interview questions tailored to the candidate's exact profile gaps.
+
+---
+
+## 📚 In-Depth Documentation
+
+- 🛠️ **[Technology Stack Details (TECHSTACK.md)](TECHSTACK.md)**: Deep breakdown of all libraries, frameworks, machine learning models, database schema, and runtime dependencies.
+- 📘 **[Architecture & How It Works (HOW_IT_WORKS.md)](HOW_IT_WORKS.md)**: Complete step-by-step pipeline, sequence diagrams, and mathematical scoring formulas.
 
 ---
 
@@ -20,9 +27,9 @@ An intelligent, full-stack recruitment intelligence platform that analyzes candi
   - 🎓 **Education Alignment (15%)**: Qualification, degree, and specialization relevance scoring.
   - 🧠 **Semantic Similarity (10%)**: Dense vector cosine similarity computed using HuggingFace's `all-MiniLM-L6-v2` embeddings.
 - **Interactive Visual Dashboard**:
-  - KPI summary metric cards (Overall Match, Skill Match, Experience, Education, Missing Skills).
-  - Plotly interactive charts: Score Breakdown Bar Chart, Missing Skills Horizontal Chart, and Matched vs. Missing Donut Chart.
-  - Tabbed breakdown for Extracted Profiles, Skill Gaps, and Interview Coach.
+  - Top 5 KPI Summary Cards (Total Candidates, Average Match %, Assessment Rate, Avg Assessment Score, Total Skill Gaps Flagged).
+  - Plotly interactive charts: Match Score Distribution Histogram, Most Frequent Skill Gaps Bar Chart, and Resume Match vs. Assessment Score Scatter Plot.
+  - 6 Platform Navigation views (`Dashboard`, `Resume Analyzer`, `Candidate Assessment`, `Recruiter Database`, `Reports & Comparison`, `Settings`).
 - **Dynamic AI Mock Interview Generator**: Generates 5 tailored interview questions (Technical, Behavioral, and Role-Fit) with specific evaluation criteria addressing the candidate's detected weaknesses.
 
 ---
@@ -41,7 +48,8 @@ flowchart TD
     D -->|Structured JD JSON| E
     C -->|Dense Vector Embeddings| E
 
-    E -->|Scores & Skill Gaps| F[app.py\nStreamlit Dashboard & Visuals]
+    E -->|Scores & Skill Gaps| H[(database.py\nSQLite Database)]
+    H --> F[app.py\nStreamlit Dashboard & Visuals]
     D -->|Candidate Profile & Gaps| G[interview.py\nMock Interview Generator]
     G -->|Targeted Questions| F
 ```
@@ -74,12 +82,15 @@ $$\text{Final Score} = (S \times 0.50) + (E \times 0.25) + (D \times 0.15) + (M 
 ├── .env.example                # Environment variable configuration template
 ├── .gitignore                  # Git ignore rules for virtualenvs, cache, and secrets
 ├── app.py                      # Main Streamlit web application & UI dashboard
+├── database.py                 # SQLite database storage layer & candidate pipeline
 ├── extractor.py                # Groq LLM structured JSON entity extractor
 ├── interview.py                # AI tailored mock interview generator
 ├── parser.py                   # PDF, DOCX, and TXT document parser
 ├── requirements.txt            # Python package dependencies
 ├── scorer.py                   # Weighted multi-factor candidate scoring engine
-└── README.md                   # Comprehensive project documentation & user guide
+├── HOW_IT_WORKS.md             # Complete architecture, pipeline & formula documentation
+├── TECHSTACK.md                # Comprehensive technology stack reference
+└── README.md                   # Main project overview & user guide
 ```
 
 ---
@@ -94,7 +105,7 @@ $$\text{Final Score} = (S \times 0.50) + (E \times 0.25) + (D \times 0.15) + (M 
 
 ### 2. Installation & Setup
 
-#### Step 1: Clone or Navigate to the Project Directory
+#### Step 1: Navigate to the Project Directory
 ```bash
 cd path/to/PythonProject5
 ```
@@ -138,8 +149,6 @@ Edit `.streamlit/secrets.toml` with your Groq API key:
 GROQ_API_KEY = "gsk_your_actual_groq_api_key_here"
 ```
 
-*(Alternatively, you can export `GROQ_API_KEY` as an environment variable in your terminal).*
-
 ---
 
 ### 4. Running the Application (Terminal Commands)
@@ -156,7 +165,7 @@ streamlit run app.py
 streamlit run app.py --server.port 8080
 ```
 
-#### Run in Headless Mode (For Remote Servers / Cloud VMs)
+#### Run in Headless Mode (For Cloud VMs)
 ```bash
 streamlit run app.py --server.headless true --server.port 8501
 ```
@@ -174,43 +183,23 @@ python -m unittest discover -s tests -p "test_*.py"
 
 ## 🛠️ Step-by-Step GitHub Setup & Push Guide
 
-Follow these commands to push your project to a new GitHub repository:
-
-### 1. Initialize Git (if not already initialized)
 ```bash
+# 1. Initialize git repository
 git init
-```
 
-### 2. Verify Ignored Files
-Check that sensitive files (`.venv/`, `.streamlit/secrets.toml`, `.idea/`) are ignored:
-```bash
-git status
-```
-
-### 3. Stage and Commit All Files
-```bash
+# 2. Stage all files
 git add .
-git commit -m "feat: initial release of HALO AI Resume Analyzer with scoring and interview coach"
-```
 
-### 4. Link to Your GitHub Repository
-Replace `<YOUR_GITHUB_USERNAME>` and `<YOUR_REPO_NAME>` with your repository details:
-```bash
+# 3. Commit changes
+git commit -m "feat: complete HALO recruitment platform with docs and light theme"
+
+# 4. Link to your GitHub repository
 git branch -M main
 git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/<YOUR_REPO_NAME>.git
-```
 
-### 5. Push Code to GitHub
-```bash
+# 5. Push code to GitHub
 git push -u origin main
 ```
-
----
-
-## 🔐 Security Best Practices
-
-- **Never commit `.streamlit/secrets.toml` or `.env` files.** The `.gitignore` is preconfigured to exclude them.
-- If you accidentally expose an API key, revoke it immediately on the [Groq Console](https://console.groq.com/) and generate a new one.
 
 ---
 
