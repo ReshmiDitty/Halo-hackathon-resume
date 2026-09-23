@@ -530,12 +530,15 @@ def render_light_table(headers, rows):
 
 
 # ==============================================================================
-# VIEW 0: COMPANY FRONT PAGE / PORTAL GATEWAY
+# VIEW 0: COMPANY FRONT PAGE / PORTAL GATEWAY & AUTHENTICATION
 # ==============================================================================
+if "selected_role" not in st.session_state:
+    st.session_state["selected_role"] = None
+
 if st.session_state["user_role"] is None:
     with st.sidebar:
-        st.markdown('<div class="nav-header">PORTAL ACCESS</div>', unsafe_allow_html=True)
-        st.info("👈 Please choose whether you are an **Admin / Recruiter** or a **Candidate / Job Seeker** on the front page.")
+        st.markdown('<div class="nav-header">HIVE PORTAL ACCESS</div>', unsafe_allow_html=True)
+        st.info("👈 Please select **Admin** or **Candidate** to sign in to your HIVE workspace.")
         
         candidates_list = db.get_all_candidates()
         candidate_count = len(candidates_list)
@@ -554,81 +557,130 @@ if st.session_state["user_role"] is None:
             unsafe_allow_html=True,
         )
 
-    # Hero Header
+    # -------------------------------------------------------------
+    # STAGE A: USERNAME & PASSWORD LOGIN FORM (WHEN ROLE IS SELECTED)
+    # -------------------------------------------------------------
+    if st.session_state["selected_role"] in ["admin", "candidate"]:
+        role_label = "Admin & Recruiter" if st.session_state["selected_role"] == "admin" else "Candidate & Job Seeker"
+        role_icon = "👔" if st.session_state["selected_role"] == "admin" else "🚀"
+
+        st.markdown(
+            f"""
+        <div style="text-align: center; max-width: 520px; margin: 2rem auto 1.5rem auto;">
+            <span style="font-size: 2.8rem; display: inline-block; margin-bottom: 0.5rem;">{role_icon}</span>
+            <h2 style="font-size: 2rem; font-weight: 900; color: #0F172A; margin: 0 0 0.5rem 0;">
+                HIVE Company — {role_label} Sign In
+            </h2>
+            <p style="color: #64748B; font-size: 0.95rem; margin: 0;">
+                Enter your credentials to access the {role_label} workspace.
+            </p>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        login_col1, login_col2, login_col3 = st.columns([1, 1.8, 1])
+        with login_col2:
+            st.markdown(
+                """
+            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 2rem 2.2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+            """,
+                unsafe_allow_html=True,
+            )
+            with st.form("hive_login_form"):
+                uname = st.text_input("Username", placeholder="e.g. admin or your username", value="admin" if st.session_state["selected_role"] == "admin" else "")
+                pword = st.text_input("Password", type="password", placeholder="Enter your password", value="admin123" if st.session_state["selected_role"] == "admin" else "")
+                
+                st.write("")
+                submit_login = st.form_submit_button("🔐 Sign In to HIVE →", use_container_width=True, type="primary")
+
+            if submit_login:
+                if not uname.strip() or not pword.strip():
+                    st.error("Please enter both username and password.")
+                else:
+                    st.session_state["user_role"] = st.session_state["selected_role"]
+                    st.session_state["logged_in_user"] = uname.strip()
+                    st.success(f"Welcome, {uname.strip()}! Loading workspace...")
+                    st.rerun()
+
+            if st.session_state["selected_role"] == "admin":
+                st.caption("💡 *Demo Admin Credentials:* `admin` / `admin123`")
+            else:
+                st.caption("💡 *Candidate Access:* Enter your desired username & password to proceed.")
+
+            st.write("")
+            if st.button("← Back to Role Selection", use_container_width=True):
+                st.session_state["selected_role"] = None
+                st.rerun()
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.stop()
+
+    # -------------------------------------------------------------
+    # STAGE B: FRONT PAGE HERO & ROLE CARDS (NO BULLET LISTS)
+    # -------------------------------------------------------------
     st.markdown(
         """
-    <div style="text-align: center; max-width: 820px; margin: 1.5rem auto 3rem auto;">
+    <div style="text-align: center; max-width: 820px; margin: 2rem auto 3rem auto;">
         <span style="display:inline-block; background:#E0F2FE; color:#0369A1; font-weight:800; font-size:0.8rem; letter-spacing:1.5px; padding:6px 16px; border-radius:999px; text-transform:uppercase; margin-bottom:1rem; border:1px solid #BAE6FD;">
-            ⚡ ENTERPRISE AI TALENT SCREENING & INTELLIGENCE
+            ⚡ ENTERPRISE TALENT & RECRUITMENT INTELLIGENCE
         </span>
-        <h1 style="font-size: 3.1rem; font-weight: 900; color: #0F172A; margin-bottom: 1rem; line-height: 1.15;">
-            Welcome to HALO Talent Solutions
+        <h1 style="font-size: 3.2rem; font-weight: 900; color: #0F172A; margin-bottom: 0.8rem; line-height: 1.15;">
+            Welcome to HIVE Company
         </h1>
         <p style="font-size: 1.15rem; color: #64748B; line-height: 1.6; margin: 0 auto;">
-            Next-generation resume matching, automated skill gap diagnostics, and AI interview intelligence designed for both enterprise hiring teams and ambitious candidates.
+            Please select your role below to authenticate and enter your dedicated workspace.
         </p>
     </div>
     """,
         unsafe_allow_html=True,
     )
 
-    # Portal Selection Cards
     p_col1, p_col2 = st.columns(2, gap="large")
 
     with p_col1:
         st.markdown(
             """
-        <div class="portal-card">
+        <div class="portal-card" style="text-align: center; padding: 2.8rem 2rem;">
             <div>
-                <div class="portal-icon">👔</div>
-                <div class="portal-title">Admin & Recruiter Portal</div>
-                <div class="portal-desc">
-                    Comprehensive talent screening suite for recruiters, hiring managers, and HR teams to benchmark cohorts and track candidate pipelines.
+                <div class="portal-icon" style="font-size: 3.2rem; margin-bottom: 0.8rem;">👔</div>
+                <div class="portal-title" style="font-size: 1.6rem; margin-bottom: 0.8rem;">Admin / Recruiter</div>
+                <div class="portal-desc" style="font-size: 1rem; color: #64748B; margin-bottom: 2rem;">
+                    Access executive talent screening, candidate pipelines, benchmarking, and platform intelligence.
                 </div>
-                <ul class="portal-features">
-                    <li>✅ <strong>Executive Hiring Dashboard</strong> with live metrics & distribution models</li>
-                    <li>✅ <strong>Recruiter Candidate Database</strong> with search, filters & CSV export</li>
-                    <li>✅ <strong>Reports & Head-to-Head Comparison</strong> with radar chart overlays</li>
-                    <li>✅ <strong>System & LLM Settings</strong> with customizable inference parameters</li>
-                </ul>
             </div>
         </div>
         """,
             unsafe_allow_html=True,
         )
-        if st.button("👔 Access Recruiter / Admin Workspace →", use_container_width=True, type="primary"):
-            st.session_state["user_role"] = "admin"
+        if st.button("👔 Continue as Admin →", use_container_width=True, type="primary"):
+            st.session_state["selected_role"] = "admin"
             st.rerun()
 
     with p_col2:
         st.markdown(
             """
-        <div class="portal-card">
+        <div class="portal-card" style="text-align: center; padding: 2.8rem 2rem;">
             <div>
-                <div class="portal-icon">🚀</div>
-                <div class="portal-title">Candidate & Job Seeker Portal</div>
-                <div class="portal-desc">
-                    Personal career intelligence studio for job applicants to evaluate resumes against target job descriptions and prepare for technical interviews.
+                <div class="portal-icon" style="font-size: 3.2rem; margin-bottom: 0.8rem;">🚀</div>
+                <div class="portal-title" style="font-size: 1.6rem; margin-bottom: 0.8rem;">Candidate / Job Seeker</div>
+                <div class="portal-desc" style="font-size: 1rem; color: #64748B; margin-bottom: 2rem;">
+                    Evaluate your resume against target job requirements and practice AI-powered mock interviews.
                 </div>
-                <ul class="portal-features">
-                    <li>✅ <strong>AI Resume vs. JD Analyzer</strong> with 4-factor weighted match scoring</li>
-                    <li>✅ <strong>Granular Skill Gap Breakdown</strong> (Matched vs. Missing skills)</li>
-                    <li>✅ <strong>Interactive AI Mock Interview Studio</strong> with tailored question coach</li>
-                    <li>✅ <strong>Executive Profile Summary</strong> with structured academic & work history</li>
-                </ul>
             </div>
         </div>
         """,
             unsafe_allow_html=True,
         )
-        if st.button("🚀 Access Candidate & Career Studio →", use_container_width=True):
-            st.session_state["user_role"] = "candidate"
+        if st.button("🚀 Continue as Candidate →", use_container_width=True):
+            st.session_state["selected_role"] = "candidate"
             st.rerun()
 
     st.markdown(
         """
-    <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #E2E8F0; text-align: center; color: #94A3B8; font-size: 0.85rem;">
-        🔒 Secure Enterprise Processing &bull; Powered by Groq Cloud AI &bull; Hugging Face Sentence Transformers &bull; SQLite Persistence
+    <div style="margin-top: 5rem; padding-top: 2rem; border-top: 1px solid #E2E8F0; text-align: center; color: #94A3B8; font-size: 0.85rem;">
+        🔒 Secure Enterprise Processing &bull; HIVE Company Intelligence Platform &bull; Powered by Groq Cloud AI
     </div>
     """,
         unsafe_allow_html=True,
