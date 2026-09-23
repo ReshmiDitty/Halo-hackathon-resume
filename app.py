@@ -3,11 +3,12 @@ HALO Recruitment & Talent Intelligence Platform (v2.0).
 
 AI-powered candidate screening, talent cohort analytics, skill gap distributions,
 real-time multi-factor resume scoring, and mock interview assessment pipeline.
-Light Theme Edition.
+Light Theme Edition with Executive Visual Profiling.
 """
 
 import json
 from collections import Counter
+import html
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -240,37 +241,123 @@ st.markdown(
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-radius: 10px;
-        padding: 1rem 1.2rem;
-        margin-bottom: 0.8rem;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        padding: 1.1rem 1.3rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .light-card-title {
         font-weight: 700;
         color: #0F172A;
-        font-size: 1rem;
+        font-size: 1.05rem;
     }
     .light-card-meta {
         color: #64748B;
-        font-size: 0.85rem;
-        margin-bottom: 0.3rem;
+        font-size: 0.88rem;
+        margin-bottom: 0.4rem;
     }
 
-    /* Streamlit widgets light styling */
+    /* File Uploader Dropzone and Uploaded Item Light Theme */
+    [data-testid="stFileUploader"] {
+        background-color: #FFFFFF !important;
+        border: 1px dashed #94A3B8 !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+    }
+    [data-testid="stFileUploaderDropzone"] {
+        background-color: #F8FAFC !important;
+        border: 1px dashed #CBD5E1 !important;
+    }
+    [data-testid="stFileUploaderDropzone"] * {
+        color: #334155 !important;
+    }
+    [data-testid="stUploadedFile"] {
+        background-color: #F8FAFC !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 8px !important;
+    }
+    [data-testid="stUploadedFile"] * {
+        color: #0F172A !important;
+    }
+
+    /* Inputs and Textareas Light Styling */
     .stTextInput>div>div>input, .stTextArea>div>div>textarea {
         background-color: #FFFFFF !important;
         color: #0F172A !important;
         border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+    }
+    .stTextInput>div>div>input::placeholder, .stTextArea>div>div>textarea::placeholder {
+        color: #94A3B8 !important;
     }
     .stSelectbox>div>div {
         background-color: #FFFFFF !important;
         color: #0F172A !important;
         border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
     }
-    div[data-testid="stFileUploader"] {
-        background-color: #FFFFFF !important;
-        border: 1px dashed #CBD5E1 !important;
-        border-radius: 10px;
-        padding: 10px;
+
+    /* Light Theme Data Table */
+    .table-container {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        overflow-x: auto;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        margin: 1rem 0;
+    }
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+        color: #0F172A;
+    }
+    .custom-table th {
+        background-color: #F8FAFC;
+        color: #475569;
+        font-weight: 800;
+        font-size: 0.75rem;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    .custom-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #F1F5F9;
+        vertical-align: middle;
+    }
+    .custom-table tr:last-child td {
+        border-bottom: none;
+    }
+    .custom-table tr:hover {
+        background-color: #F8FAFC;
+    }
+
+    /* Table Status Pills */
+    .table-pill-assessed {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #DCFCE7;
+        color: #15803D;
+        font-weight: 700;
+        font-size: 0.78rem;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid #86EFAC;
+    }
+    .table-pill-screened {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #E0F2FE;
+        color: #0369A1;
+        font-weight: 700;
+        font-size: 0.78rem;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid #BAE6FD;
     }
     
     /* Primary buttons */
@@ -295,6 +382,30 @@ st.markdown(
 
 # Initialize database
 db.init_db()
+
+
+def render_light_table(headers, rows):
+    """Render a clean, modern, light-themed HTML table."""
+    th_html = "".join([f"<th>{html.escape(h)}</th>" for h in headers])
+    tr_html = ""
+    for row in rows:
+        td_html = "".join([f"<td>{r}</td>" for r in row])
+        tr_html += f"<tr>{td_html}</tr>"
+
+    table_markup = f"""
+    <div class="table-container">
+        <table class="custom-table">
+            <thead>
+                <tr>{th_html}</tr>
+            </thead>
+            <tbody>
+                {tr_html}
+            </tbody>
+        </table>
+    </div>
+    """
+    st.markdown(table_markup, unsafe_allow_html=True)
+
 
 # ---------- SIDEBAR NAVIGATION & ACTIONS ----------
 with st.sidebar:
@@ -331,7 +442,7 @@ with st.sidebar:
         <div class="status-card-title">SYSTEM STATUS</div>
         <div class="status-row"><span>AI Engine:</span><span class="status-val-local" style="color:{ai_engine_color};">{ai_engine_text}</span></div>
         <div class="status-row"><span>Database:</span><span class="status-val-online">SQLite Online</span></div>
-        <div class="status-row"><span>Candidates:</span><span style="font-weight:700; color:#0F172A;">{candidate_count}</span></div>
+        <div class="status-row"><span>Candidates:</span><span style="font-weight:800; color:#0F172A;">{candidate_count}</span></div>
     </div>
     """,
         unsafe_allow_html=True,
@@ -534,25 +645,31 @@ if page == "📊 Dashboard":
         st.plotly_chart(fig3, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Recent Candidates Table
+    # Recent Candidates Clean Light Table
     st.markdown('<div class="section-title">Candidate Pipeline Stream</div>', unsafe_allow_html=True)
     if all_cands:
-        table_data = []
+        table_rows = []
         for c in all_cands[:8]:
-            status_tag = "🟢 Assessed" if c["status"] == "Assessed" else "🔵 Screened"
-            gaps_formatted = ", ".join(c["missing_skills"][:2]) + ("..." if len(c["missing_skills"]) > 2 else "")
-            table_data.append(
-                {
-                    "Candidate": c["name"],
-                    "Target Role": c["role"],
-                    "Match Score": f"{c['match_score']:.1f}%",
-                    "Skill Match": f"{c['skill_match']:.0f}%",
-                    "Assessment": f"{c['assessment_score']:.1f}%" if c["status"] == "Assessed" else "Pending",
-                    "Primary Skill Gaps": gaps_formatted or "None",
-                    "Status": status_tag,
-                }
+            status_html = (
+                '<span class="table-pill-assessed">● Assessed</span>'
+                if c["status"] == "Assessed"
+                else '<span class="table-pill-screened">● Screened</span>'
             )
-        st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
+            gaps_text = ", ".join(c["missing_skills"][:2]) + ("..." if len(c["missing_skills"]) > 2 else "")
+            assess_text = f"<strong>{c['assessment_score']:.1f}%</strong>" if c["status"] == "Assessed" else "<span style='color:#94A3B8;'>Pending</span>"
+            table_rows.append([
+                f"<strong>{html.escape(c['name'])}</strong>",
+                html.escape(c["role"]),
+                f"<span style='color:#0284C7; font-weight:700;'>{c['match_score']:.1f}%</span>",
+                f"{c['skill_match']:.0f}%",
+                assess_text,
+                html.escape(gaps_text) or "<span style='color:#16A34A;'>None</span>",
+                status_html,
+            ])
+        render_light_table(
+            headers=["Candidate", "Target Role", "Match Score", "Skill Match", "Assessment", "Primary Skill Gaps", "Status"],
+            rows=table_rows,
+        )
 
 
 # ==============================================================================
@@ -613,16 +730,19 @@ elif page == "📄 Resume Analyzer":
             if st.session_state.get("demo_loaded") and not resume_file:
                 demo = db.DEMO_CANDIDATES[0]
                 resume_data = {
-                    "skills": ["Python", "JavaScript", "React", "Node.js", "Docker", "AWS", "SQL", "Git", "REST APIs"],
-                    "education": [{"degree": demo["education"], "institution": "Tech University", "year": "2020"}],
-                    "experience": [{"title": demo["role"], "company": "Tech Corp", "duration": "6.5 years", "description": "Designed cloud systems."}],
+                    "skills": ["Python", "JavaScript", "React", "Node.js", "Docker", "AWS", "SQL", "Git", "REST APIs", "Agile/Scrum"],
+                    "education": [{"degree": "Bachelor of Science in Computer Science", "institution": "State University", "year": "2020"}],
+                    "experience": [
+                        {"title": "Senior Software Engineer", "company": "Tech Innovations Inc.", "duration": "3.5 years", "description": "Architected high-throughput microservices using Python, FastAPI, and Docker. Led a team of 4 engineers."},
+                        {"title": "Full Stack Developer", "company": "CloudScale Systems", "duration": "2.7 years", "description": "Developed React single-page applications and RESTful APIs with Node.js and PostgreSQL."}
+                    ],
                     "total_years_experience": demo["experience_years"],
                 }
                 jd_data = {
                     "required_skills": ["Python", "React", "Node.js", "Docker", "Kubernetes", "AWS"],
                     "preferred_skills": ["GraphQL", "CI/CD"],
                     "required_experience_years": 5,
-                    "education_requirement": "B.S. Computer Science",
+                    "education_requirement": "Bachelor of Science in Computer Science",
                     "key_responsibilities": ["Lead development", "Architect distributed systems"],
                 }
                 resume_text = "Experienced Full Stack Engineer with Python, React, Node.js, Docker, AWS, and database skills."
@@ -666,6 +786,7 @@ elif page == "📄 Resume Analyzer":
         b = result["breakdown"]
         gap = result["skill_gap"]
         final_score = result["final_score"]
+        rdata = analysis["resume_data"]
 
         st.markdown('<div class="section-title">Match Analysis Results</div>', unsafe_allow_html=True)
         r1, r2, r3, r4 = st.columns(4)
@@ -715,7 +836,8 @@ elif page == "📄 Resume Analyzer":
             )
 
         # Tabbed Breakdown
-        tab1, tab2, tab3 = st.tabs(["🎯 Skill Gap Detail", "🧠 Extracted Entities", "📊 Comparison Radar"])
+        tab1, tab2, tab3 = st.tabs(["🎯 Skill Gap Detail", "🧠 Extracted Candidate Profile", "📊 Comparison Radar"])
+        
         with tab1:
             st.markdown("**Matched Skills:**")
             st.markdown("".join([f'<span class="badge badge-matched">{s}</span>' for s in gap["matched"]]) or "*None*", unsafe_allow_html=True)
@@ -726,8 +848,76 @@ elif page == "📄 Resume Analyzer":
             st.markdown("<br>**Missing Preferred Skills:**", unsafe_allow_html=True)
             st.markdown("".join([f'<span class="badge badge-missing-pref">{s}</span>' for s in gap["missing_preferred"]]) or "*None*", unsafe_allow_html=True)
 
+        # TAB 2: GORGEOUS, PROFESSIONAL CANDIDATE PROFILE (NO RAW CODE)
         with tab2:
-            st.json(analysis["resume_data"])
+            st.markdown(
+                f"""
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:10px; padding:12px 18px; margin-bottom:1.2rem;">
+                <div>
+                    <span style="color:#64748B; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;">Parsed Candidate</span>
+                    <h3 style="margin:0; color:#0F172A; font-size:1.2rem; font-weight:800;">{html.escape(analysis['name'])}</h3>
+                </div>
+                <div style="text-align:right;">
+                    <span style="color:#64748B; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;">Total Experience</span>
+                    <div style="font-size:1.2rem; font-weight:800; color:#0284C7;">{rdata.get('total_years_experience', 0)} Years</div>
+                </div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+            # Skills Section
+            st.markdown('<div style="font-weight:800; color:#0F172A; font-size:0.95rem; margin-bottom:6px;">🛠️ Identified Technical & Professional Skills</div>', unsafe_allow_html=True)
+            skills_list = rdata.get("skills", [])
+            if skills_list:
+                skills_badges = "".join([f'<span class="badge badge-matched" style="background:#F0F9FF; color:#0369A1; border-color:#BAE6FD; font-size:0.85rem; padding:6px 14px;">{html.escape(s)}</span>' for s in skills_list])
+                st.markdown(f'<div style="margin-bottom:1.5rem;">{skills_badges}</div>', unsafe_allow_html=True)
+            else:
+                st.info("No specific skills extracted.")
+
+            # Education Section
+            st.markdown('<div style="font-weight:800; color:#0F172A; font-size:0.95rem; margin-bottom:6px;">🎓 Education & Academic History</div>', unsafe_allow_html=True)
+            edu_list = rdata.get("education", [])
+            if edu_list:
+                for edu in edu_list:
+                    st.markdown(
+                        f"""
+                    <div class="light-card" style="border-left: 4px solid #0284C7; margin-bottom:0.7rem;">
+                        <div style="font-weight:800; color:#0F172A; font-size:1rem;">{html.escape(edu.get('degree', 'Degree'))}</div>
+                        <div style="color:#64748B; font-size:0.88rem; margin-top:2px;">🏛️ {html.escape(edu.get('institution', 'University'))} &nbsp;·&nbsp; 🗓️ {html.escape(str(edu.get('year', 'N/A')))}</div>
+                    </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.info("No formal education history detected.")
+
+            # Experience Section
+            st.markdown('<div style="font-weight:800; color:#0F172A; font-size:0.95rem; margin:1.2rem 0 6px 0;">💼 Professional Work Experience</div>', unsafe_allow_html=True)
+            exp_list = rdata.get("experience", [])
+            if exp_list:
+                for exp in exp_list:
+                    desc = html.escape(exp.get("description", ""))
+                    st.markdown(
+                        f"""
+                    <div class="light-card" style="border-left: 4px solid #16A34A; margin-bottom:0.8rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div>
+                                <div style="font-weight:800; color:#0F172A; font-size:1.02rem;">{html.escape(exp.get('title', 'Position'))}</div>
+                                <div style="color:#0284C7; font-weight:700; font-size:0.9rem; margin-top:2px;">🏢 {html.escape(exp.get('company', 'Company'))}</div>
+                            </div>
+                            <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #E2E8F0;">⏱️ {html.escape(str(exp.get('duration', 'N/A')))}</span>
+                        </div>
+                        <div style="color:#334155; font-size:0.88rem; margin-top:8px; line-height:1.5;">{desc}</div>
+                    </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.info("No detailed work history detected.")
+
+            with st.expander("🔍 View Raw JSON Data (Developer Reference)"):
+                st.json(rdata)
 
         with tab3:
             radar_fig = go.Figure()
@@ -780,11 +970,11 @@ elif page == "🎯 Candidate Assessment":
             st.markdown(
                 f"""
             <div class="light-card">
-                <div class="light-card-title">{cand['name']}</div>
-                <div class="light-card-meta">{cand['role']} · Match Score: <strong>{cand['match_score']:.1f}%</strong></div>
+                <div class="light-card-title">{html.escape(cand['name'])}</div>
+                <div class="light-card-meta">{html.escape(cand['role'])} · Match Score: <strong style="color:#0284C7;">{cand['match_score']:.1f}%</strong></div>
                 <div style="margin-top:8px;">
                     <strong>Identified Skill Gaps:</strong><br>
-                    {' '.join([f'<span class=\"badge badge-missing-req\">{s}</span>' for s in cand['missing_skills']]) or 'None'}
+                    {' '.join([f'<span class=\"badge badge-missing-req\">{html.escape(s)}</span>' for s in cand['missing_skills']]) or '<span style=\"color:#16A34A;\">None</span>'}
                 </div>
             </div>
             """,
@@ -795,7 +985,7 @@ elif page == "🎯 Candidate Assessment":
             st.markdown(
                 f"""
             <div class="light-card">
-                <div class="light-card-title">Assessment Status: {cand['status']}</div>
+                <div class="light-card-title">Assessment Status: <span style="color:{'#16A34A' if cand['status'] == 'Assessed' else '#0284C7'};">{cand['status']}</span></div>
                 <div class="light-card-meta">Current Interview Score: <strong>{cand['assessment_score']:.1f}%</strong></div>
             </div>
             """,
@@ -836,8 +1026,8 @@ elif page == "🎯 Candidate Assessment":
                 f"""
             <div class="light-card">
                 <span class="badge badge-matched" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE;">{q.get('type', 'General').upper()}</span>
-                <div style="font-weight:700; color:#0F172A; margin: 6px 0 4px 0;">{idx}. {q.get('question')}</div>
-                <div style="color:#64748B; font-size:0.85rem; font-style:italic;">Evaluates: {q.get('tests')}</div>
+                <div style="font-weight:700; color:#0F172A; margin: 6px 0 4px 0;">{idx}. {html.escape(q.get('question'))}</div>
+                <div style="color:#64748B; font-size:0.85rem; font-style:italic;">Evaluates: {html.escape(q.get('tests'))}</div>
             </div>
             """,
                 unsafe_allow_html=True,
@@ -883,7 +1073,34 @@ elif page == "👥 Recruiter Database":
     st.markdown(f"**Showing {len(filtered_cands)} candidates**")
 
     if filtered_cands:
-        df = pd.DataFrame(
+        table_rows = []
+        for c in filtered_cands:
+            status_html = (
+                '<span class="table-pill-assessed">● Assessed</span>'
+                if c["status"] == "Assessed"
+                else '<span class="table-pill-screened">● Screened</span>'
+            )
+            gaps_text = ", ".join(c["missing_skills"]) or "None"
+            assess_text = f"<strong>{c['assessment_score']:.1f}%</strong>" if c["status"] == "Assessed" else "<span style='color:#94A3B8;'>Pending</span>"
+            table_rows.append([
+                f"<span style='color:#64748B;'>#{c['id']}</span>",
+                f"<strong>{html.escape(c['name'])}</strong>",
+                html.escape(c["role"]),
+                f"<span style='color:#0284C7; font-weight:700;'>{c['match_score']:.1f}%</span>",
+                f"{c['skill_match']:.0f}%",
+                f"{c['experience_years']} yrs",
+                html.escape(c["education"]),
+                html.escape(gaps_text),
+                assess_text,
+                status_html,
+            ])
+
+        render_light_table(
+            headers=["ID", "Candidate", "Role", "Match Score", "Skill Match", "Experience", "Education", "Missing Skills", "Assessment", "Status"],
+            rows=table_rows,
+        )
+
+        df_export = pd.DataFrame(
             [
                 {
                     "ID": c["id"],
@@ -900,11 +1117,10 @@ elif page == "👥 Recruiter Database":
                 for c in filtered_cands
             ]
         )
-        st.dataframe(df, use_container_width=True, hide_index=True)
 
         st.download_button(
-            "📥 Export Candidate Data as CSV",
-            data=df.to_csv(index=False),
+            "📥 Export Candidate Pipeline as CSV",
+            data=df_export.to_csv(index=False),
             file_name="recruiter_candidate_pipeline.csv",
             mime="text/csv",
         )
@@ -968,15 +1184,15 @@ elif page == "⚖️ Reports & Comparison":
                     st.markdown(
                         f"""
                     <div class="kpi-card" style="border-top: 4px solid {colors[i % len(colors)]};">
-                        <div class="kpi-title">{c['name']}</div>
+                        <div class="kpi-title">{html.escape(c['name'])}</div>
                         <div class="kpi-num" style="color:{colors[i % len(colors)]};">{c['match_score']:.1f}%</div>
-                        <div class="kpi-footer" style="color:#64748B;">{c['role']}</div>
+                        <div class="kpi-footer" style="color:#64748B;">{html.escape(c['role'])}</div>
                         <hr style="border-color:#E2E8F0; margin: 12px 0;">
                         <div style="font-size:0.85rem; color:#334155;">
                             <div><strong>Skill Match:</strong> {c['skill_match']:.0f}%</div>
                             <div><strong>Experience:</strong> {c['experience_years']} years</div>
                             <div><strong>Assessment:</strong> {c['assessment_score']:.1f}%</div>
-                            <div style="margin-top:6px;"><strong>Missing:</strong><br>{', '.join(c['missing_skills']) or 'None'}</div>
+                            <div style="margin-top:6px;"><strong>Missing:</strong><br>{', '.join([html.escape(s) for s in c['missing_skills']]) or 'None'}</div>
                         </div>
                     </div>
                     """,
