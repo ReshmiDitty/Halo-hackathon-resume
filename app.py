@@ -1,9 +1,10 @@
 """
 HALO Recruitment & Talent Intelligence Platform (v2.0).
 
-AI-powered candidate screening, talent cohort analytics, skill gap distributions,
-real-time multi-factor resume scoring, and mock interview assessment pipeline.
-Light Theme Edition with Executive Visual Profiling.
+Multi-Portal Company Platform with Role-Based Access:
+- Landing Page: Company Welcome & Portal Gateway (Admin vs. Candidate)
+- Admin Portal: Dashboard, Recruiter Database, Reports & Comparison, Settings
+- Candidate Portal: Resume vs. JD Analyzer, AI Mock Interview Assessment Studio
 """
 
 import json
@@ -21,11 +22,18 @@ from scorer import calculate_match_score
 
 # ---------- PAGE CONFIGURATION ----------
 st.set_page_config(
-    page_title="HALO – AI Recruitment & Screening Platform",
+    page_title="HALO – AI Recruitment & Talent Intelligence Platform",
     page_icon="🧭",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ---------- SESSION STATE INITIALIZATION ----------
+if "user_role" not in st.session_state:
+    st.session_state["user_role"] = None
+
+# Initialize database
+db.init_db()
 
 # ---------- GLOBAL LIGHT THEME STYLING ----------
 st.markdown(
@@ -39,7 +47,6 @@ st.markdown(
         color: #0F172A !important;
     }
 
-    /* Top header bar adjustment */
     header[data-testid="stHeader"] {
         background-color: transparent !important;
     }
@@ -54,6 +61,33 @@ st.markdown(
         padding-bottom: 2rem;
     }
 
+    /* Role Badge */
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #F1F5F9;
+        color: #0F172A;
+        font-size: 0.8rem;
+        font-weight: 800;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid #CBD5E1;
+        margin-bottom: 1rem;
+        width: 100%;
+        justify-content: center;
+    }
+    .role-badge-admin {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border-color: #BFDBFE;
+    }
+    .role-badge-candidate {
+        background: #F0FDF4;
+        color: #15803D;
+        border-color: #BBF7D0;
+    }
+
     /* Nav Header */
     .nav-header {
         color: #0284C7 !important;
@@ -61,7 +95,7 @@ st.markdown(
         font-weight: 800 !important;
         letter-spacing: 1.6px !important;
         text-transform: uppercase !important;
-        margin: 1.4rem 0 0.8rem 0 !important;
+        margin: 1rem 0 0.6rem 0 !important;
     }
 
     /* Sidebar Navigation Radio Buttons */
@@ -245,85 +279,58 @@ st.markdown(
         margin-bottom: 1rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .light-card-title {
-        font-weight: 700;
+
+    /* Portal Landing Cards */
+    .portal-card {
+        background: #FFFFFF;
+        border: 2px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 2.2rem 2rem;
+        text-align: left;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .portal-card:hover {
+        border-color: #0284C7;
+        box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15);
+        transform: translateY(-3px);
+    }
+    .portal-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+    .portal-title {
+        font-size: 1.45rem;
+        font-weight: 800;
         color: #0F172A;
-        font-size: 1.05rem;
+        margin-bottom: 0.6rem;
     }
-    .light-card-meta {
+    .portal-desc {
         color: #64748B;
-        font-size: 0.88rem;
-        margin-bottom: 0.4rem;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    .portal-features {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1.8rem 0;
+    }
+    .portal-features li {
+        color: #334155;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
-    /* File Uploader Exhaustive Light Theme Styling */
-    div[data-testid="stFileUploader"],
-    div[data-testid="stFileUploader"] section,
-    div[data-testid="stFileUploader"] > div,
-    section[data-testid="stFileUploadDropzone"],
-    section[data-testid="stFileUploaderDropzone"],
-    div[data-testid="stFileUploadDropzone"],
-    div[data-testid="stFileUploaderDropzone"],
-    div[data-testid="stFileUploaderDropzone"] > div,
-    .stFileUploaderDropzone {
-        background-color: #FFFFFF !important;
-        background: #FFFFFF !important;
-        color: #0F172A !important;
-        border: 1px dashed #CBD5E1 !important;
-        border-radius: 10px !important;
-    }
-    
-    /* Uploaded file preview bar */
-    div[data-testid="stUploadedFile"],
-    div[data-testid="stUploadedFile"] > div,
-    div[data-testid="stUploadedFileData"],
-    [data-testid="stUploadedFile"],
-    [data-testid="stUploadedFile"] * {
-        background-color: #FFFFFF !important;
-        background: #FFFFFF !important;
-        color: #0F172A !important;
-        fill: #0F172A !important;
-    }
-    div[data-testid="stUploadedFile"] {
-        border: 1px solid #CBD5E1 !important;
-        border-radius: 8px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
-        padding: 6px 12px !important;
-    }
-    div[data-testid="stUploadedFile"] small {
-        color: #64748B !important;
-    }
-    
-    /* Browse files button inside uploader */
-    div[data-testid="stFileUploader"] button {
-        background: #F1F5F9 !important;
-        color: #0F172A !important;
-        border: 1px solid #CBD5E1 !important;
-        font-weight: 700 !important;
-        border-radius: 6px !important;
-    }
-    div[data-testid="stFileUploader"] button:hover {
-        background: #E2E8F0 !important;
-        color: #0284C7 !important;
-    }
-
-    /* Inputs and Textareas Light Styling */
-    textarea[data-testid="stTextArea"],
-    .stTextArea textarea,
-    .stTextInput input,
-    div[data-baseweb="textarea"],
-    div[data-baseweb="textarea"] textarea,
-    div[data-baseweb="input"],
-    div[data-baseweb="input"] input {
-        background-color: #FFFFFF !important;
-        background: #FFFFFF !important;
-        color: #0F172A !important;
-        border: 1px solid #CBD5E1 !important;
-        border-radius: 8px !important;
-    }
-    .stTextInput>div>div>input::placeholder, .stTextArea>div>div>textarea::placeholder {
-        color: #94A3B8 !important;
-    }
     /* Complete Dropdown & Popover Light Styling */
     div[data-baseweb="select"],
     div[data-baseweb="select"] > div,
@@ -398,7 +405,6 @@ st.markdown(
         background-color: #F8FAFC;
     }
 
-    /* Table Status Pills */
     .table-pill-assessed {
         display: inline-flex;
         align-items: center;
@@ -423,7 +429,62 @@ st.markdown(
         border-radius: 999px;
         border: 1px solid #BAE6FD;
     }
+
+    /* File Uploader Exhaustive Light Theme Styling */
+    div[data-testid="stFileUploader"],
+    div[data-testid="stFileUploader"] section,
+    div[data-testid="stFileUploader"] > div,
+    section[data-testid="stFileUploadDropzone"],
+    section[data-testid="stFileUploaderDropzone"],
+    div[data-testid="stFileUploadDropzone"],
+    div[data-testid="stFileUploaderDropzone"],
+    div[data-testid="stFileUploaderDropzone"] > div,
+    .stFileUploaderDropzone {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 1px dashed #CBD5E1 !important;
+        border-radius: 10px !important;
+    }
     
+    div[data-testid="stUploadedFile"],
+    div[data-testid="stUploadedFile"] > div,
+    div[data-testid="stUploadedFileData"],
+    [data-testid="stUploadedFile"],
+    [data-testid="stUploadedFile"] * {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        fill: #0F172A !important;
+    }
+    div[data-testid="stUploadedFile"] {
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        padding: 6px 12px !important;
+    }
+    div[data-testid="stUploadedFile"] small {
+        color: #64748B !important;
+    }
+
+    /* Inputs and Textareas Light Styling */
+    textarea[data-testid="stTextArea"],
+    .stTextArea textarea,
+    .stTextInput input,
+    div[data-baseweb="textarea"],
+    div[data-baseweb="textarea"] textarea,
+    div[data-baseweb="input"],
+    div[data-baseweb="input"] input {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+    }
+    .stTextInput>div>div>input::placeholder, .stTextArea>div>div>textarea::placeholder {
+        color: #94A3B8 !important;
+    }
+
     /* Primary buttons */
     .stButton>button {
         background: linear-gradient(90deg, #0284C7, #4F46E5) !important;
@@ -431,7 +492,7 @@ st.markdown(
         font-weight: 700 !important;
         border: none !important;
         border-radius: 8px !important;
-        padding: 0.6rem 1.5rem !important;
+        padding: 0.65rem 1.6rem !important;
         transition: all 0.2s ease-in-out;
     }
     .stButton>button:hover {
@@ -443,9 +504,6 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
-# Initialize database
-db.init_db()
 
 
 def render_light_table(headers, rows):
@@ -471,28 +529,152 @@ def render_light_table(headers, rows):
     st.markdown(table_markup, unsafe_allow_html=True)
 
 
-# ---------- SIDEBAR NAVIGATION & ACTIONS ----------
-with st.sidebar:
-    if st.button("✨ Load Demo Candidate (John Doe)", use_container_width=True):
-        st.session_state["demo_loaded"] = True
-        st.success("Loaded John Doe demo profile!")
+# ==============================================================================
+# VIEW 0: COMPANY FRONT PAGE / PORTAL GATEWAY
+# ==============================================================================
+if st.session_state["user_role"] is None:
+    with st.sidebar:
+        st.markdown('<div class="nav-header">PORTAL ACCESS</div>', unsafe_allow_html=True)
+        st.info("👈 Please choose whether you are an **Admin / Recruiter** or a **Candidate / Job Seeker** on the front page.")
+        
+        candidates_list = db.get_all_candidates()
+        candidate_count = len(candidates_list)
+        has_api_key = bool(get_groq_api_key())
+        ai_engine_text = "GROQ CLOUD" if has_api_key else "LOCAL FALLBACK"
 
-    st.markdown('<div class="nav-header">PLATFORM NAVIGATION</div>', unsafe_allow_html=True)
-    
-    page = st.radio(
-        "Navigation",
-        options=[
-            "📊 Dashboard",
-            "📄 Resume Analyzer",
-            "🎯 Candidate Assessment",
-            "👥 Recruiter Database",
-            "⚖️ Reports & Comparison",
-            "⚙️ Settings",
-        ],
-        label_visibility="collapsed",
+        st.markdown(
+            f"""
+        <div class="status-card">
+            <div class="status-card-title">SYSTEM STATUS</div>
+            <div class="status-row"><span>AI Engine:</span><span class="status-val-local">{ai_engine_text}</span></div>
+            <div class="status-row"><span>Database:</span><span class="status-val-online">SQLite Online</span></div>
+            <div class="status-row"><span>Candidates:</span><span style="font-weight:800; color:#0F172A;">{candidate_count}</span></div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+    # Hero Header
+    st.markdown(
+        """
+    <div style="text-align: center; max-width: 820px; margin: 1.5rem auto 3rem auto;">
+        <span style="display:inline-block; background:#E0F2FE; color:#0369A1; font-weight:800; font-size:0.8rem; letter-spacing:1.5px; padding:6px 16px; border-radius:999px; text-transform:uppercase; margin-bottom:1rem; border:1px solid #BAE6FD;">
+            ⚡ ENTERPRISE AI TALENT SCREENING & INTELLIGENCE
+        </span>
+        <h1 style="font-size: 3.1rem; font-weight: 900; color: #0F172A; margin-bottom: 1rem; line-height: 1.15;">
+            Welcome to HALO Talent Solutions
+        </h1>
+        <p style="font-size: 1.15rem; color: #64748B; line-height: 1.6; margin: 0 auto;">
+            Next-generation resume matching, automated skill gap diagnostics, and AI interview intelligence designed for both enterprise hiring teams and ambitious candidates.
+        </p>
+    </div>
+    """,
+        unsafe_allow_html=True,
     )
 
-    # Fetch live candidate count for status
+    # Portal Selection Cards
+    p_col1, p_col2 = st.columns(2, gap="large")
+
+    with p_col1:
+        st.markdown(
+            """
+        <div class="portal-card">
+            <div>
+                <div class="portal-icon">👔</div>
+                <div class="portal-title">Admin & Recruiter Portal</div>
+                <div class="portal-desc">
+                    Comprehensive talent screening suite for recruiters, hiring managers, and HR teams to benchmark cohorts and track candidate pipelines.
+                </div>
+                <ul class="portal-features">
+                    <li>✅ <strong>Executive Hiring Dashboard</strong> with live metrics & distribution models</li>
+                    <li>✅ <strong>Recruiter Candidate Database</strong> with search, filters & CSV export</li>
+                    <li>✅ <strong>Reports & Head-to-Head Comparison</strong> with radar chart overlays</li>
+                    <li>✅ <strong>System & LLM Settings</strong> with customizable inference parameters</li>
+                </ul>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+        if st.button("👔 Access Recruiter / Admin Workspace →", use_container_width=True, type="primary"):
+            st.session_state["user_role"] = "admin"
+            st.rerun()
+
+    with p_col2:
+        st.markdown(
+            """
+        <div class="portal-card">
+            <div>
+                <div class="portal-icon">🚀</div>
+                <div class="portal-title">Candidate & Job Seeker Portal</div>
+                <div class="portal-desc">
+                    Personal career intelligence studio for job applicants to evaluate resumes against target job descriptions and prepare for technical interviews.
+                </div>
+                <ul class="portal-features">
+                    <li>✅ <strong>AI Resume vs. JD Analyzer</strong> with 4-factor weighted match scoring</li>
+                    <li>✅ <strong>Granular Skill Gap Breakdown</strong> (Matched vs. Missing skills)</li>
+                    <li>✅ <strong>Interactive AI Mock Interview Studio</strong> with tailored question coach</li>
+                    <li>✅ <strong>Executive Profile Summary</strong> with structured academic & work history</li>
+                </ul>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+        if st.button("🚀 Access Candidate & Career Studio →", use_container_width=True):
+            st.session_state["user_role"] = "candidate"
+            st.rerun()
+
+    st.markdown(
+        """
+    <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #E2E8F0; text-align: center; color: #94A3B8; font-size: 0.85rem;">
+        🔒 Secure Enterprise Processing &bull; Powered by Groq Cloud AI &bull; Hugging Face Sentence Transformers &bull; SQLite Persistence
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+    st.stop()
+
+
+# ==============================================================================
+# SIDEBAR CONTROLLER FOR AUTHENTICATED ROLES (ADMIN OR CANDIDATE)
+# ==============================================================================
+with st.sidebar:
+    # Portal switcher button
+    if st.button("🏠 Switch Portal / Change Role", use_container_width=True):
+        st.session_state["user_role"] = None
+        st.rerun()
+
+    if st.session_state["user_role"] == "admin":
+        st.markdown('<div class="role-badge role-badge-admin">👔 Admin / Recruiter Workspace</div>', unsafe_allow_html=True)
+        
+        if st.button("✨ Load Demo Candidate (John Doe)", use_container_width=True):
+            st.session_state["demo_loaded"] = True
+            st.success("Loaded John Doe demo profile!")
+
+        st.markdown('<div class="nav-header">ADMIN NAVIGATION</div>', unsafe_allow_html=True)
+        page = st.radio(
+            "Admin Navigation",
+            options=[
+                "📊 Dashboard",
+                "👥 Recruiter Database",
+                "⚖️ Reports & Comparison",
+                "⚙️ Settings",
+            ],
+            label_visibility="collapsed",
+        )
+    else:
+        st.markdown('<div class="role-badge role-badge-candidate">🚀 Candidate / Job Seeker Studio</div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-header">CANDIDATE TOOLS</div>', unsafe_allow_html=True)
+        page = st.radio(
+            "Candidate Navigation",
+            options=[
+                "📄 Resume Analyzer",
+                "🎯 Candidate Assessment",
+            ],
+            label_visibility="collapsed",
+        )
+
     candidates_list = db.get_all_candidates()
     candidate_count = len(candidates_list)
     has_api_key = bool(get_groq_api_key())
@@ -519,7 +701,7 @@ with st.sidebar:
 
 
 # ==============================================================================
-# PAGE 1: TALENT SCREENING & HIRING DASHBOARD
+# ADMIN VIEW 1: TALENT SCREENING & HIRING DASHBOARD
 # ==============================================================================
 if page == "📊 Dashboard":
     st.markdown('<div class="eyebrow">RECRUITER COMMAND CENTER</div>', unsafe_allow_html=True)
@@ -609,7 +791,6 @@ if page == "📊 Dashboard":
             unsafe_allow_html=True,
         )
 
-    # Section Heading
     st.markdown('<div class="section-title">Cohort Analytics & Distribution Models</div>', unsafe_allow_html=True)
 
     # 3 Light Plotly Charts side by side
@@ -623,7 +804,6 @@ if page == "📊 Dashboard":
         font=dict(family="Inter", color="#475569", size=11),
     )
 
-    # Chart 1: Candidate Match Score Distribution
     with ch1:
         st.markdown('<div class="chart-box"><div class="chart-title">Candidate Match Score Distribution</div>', unsafe_allow_html=True)
         scores = [c["match_score"] for c in all_cands]
@@ -644,7 +824,6 @@ if page == "📊 Dashboard":
         st.plotly_chart(fig1, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Chart 2: Most Frequent Skill Gaps
     with ch2:
         st.markdown('<div class="chart-box"><div class="chart-title">Most Frequent Skill Gaps</div>', unsafe_allow_html=True)
         gap_counts = Counter(all_gaps).most_common(5)
@@ -672,7 +851,6 @@ if page == "📊 Dashboard":
             st.info("No skill gaps flagged in candidate pool.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Chart 3: Resume Match vs. Assessment Score
     with ch3:
         st.markdown('<div class="chart-box"><div class="chart-title">Resume Match vs. Assessment Score</div>', unsafe_allow_html=True)
         screened = [c for c in all_cands if c["status"] == "Screened"]
@@ -709,7 +887,7 @@ if page == "📊 Dashboard":
         st.plotly_chart(fig3, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Candidate Pipeline Stream with Interactive Clickable Pills & Filter Toolbar
+    # Candidate Pipeline Stream with Interactive Clickable Pills
     st.markdown('<div class="section-title">Candidate Pipeline Stream</div>', unsafe_allow_html=True)
     
     screened_count = len([c for c in all_cands if c["status"] == "Screened"])
@@ -754,14 +932,12 @@ if page == "📊 Dashboard":
                 key="pipeline_radio_sort",
             )
 
-    # Filter pipeline stream
     displayed_cands = list(all_cands)
     if stream_filter and "Screened" in stream_filter:
         displayed_cands = [c for c in displayed_cands if c["status"] == "Screened"]
     elif stream_filter and "Assessed" in stream_filter:
         displayed_cands = [c for c in displayed_cands if c["status"] == "Assessed"]
 
-    # Sort pipeline stream
     if stream_sort in ["🏆 Highest Match", "Highest Match Score First (High → Low)"]:
         displayed_cands.sort(key=lambda c: c["match_score"], reverse=True)
     elif stream_sort in ["📉 Lowest Match", "Lowest Match Score First (Low → High)"]:
@@ -799,17 +975,202 @@ if page == "📊 Dashboard":
 
 
 # ==============================================================================
-# PAGE 2: RESUME ANALYZER
+# ADMIN VIEW 2: RECRUITER DATABASE
+# ==============================================================================
+elif page == "👥 Recruiter Database":
+    st.markdown('<div class="eyebrow">TALENT REPOSITORY</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Recruiter Candidate Database</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Search, filter, inspect, and manage screened candidates stored in the local SQLite database.</div>',
+        unsafe_allow_html=True,
+    )
+
+    all_cands = db.get_all_candidates()
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        search_query = st.text_input("🔍 Search candidates by name or role", "")
+    with col2:
+        status_filter = st.selectbox("Filter by Status", ["All", "Screened", "Assessed"])
+
+    filtered_cands = all_cands
+    if search_query:
+        filtered_cands = [
+            c for c in filtered_cands
+            if search_query.lower() in c["name"].lower() or search_query.lower() in c["role"].lower()
+        ]
+    if status_filter != "All":
+        filtered_cands = [c for c in filtered_cands if c["status"] == status_filter]
+
+    st.markdown(f"**Showing {len(filtered_cands)} candidates**")
+
+    if filtered_cands:
+        table_rows = []
+        for c in filtered_cands:
+            status_html = (
+                '<span class="table-pill-assessed">● Assessed</span>'
+                if c["status"] == "Assessed"
+                else '<span class="table-pill-screened">● Screened</span>'
+            )
+            gaps_text = ", ".join(c["missing_skills"]) or "None"
+            assess_text = f"<strong>{c['assessment_score']:.1f}%</strong>" if c["status"] == "Assessed" else "<span style='color:#94A3B8;'>Pending</span>"
+            table_rows.append([
+                f"<span style='color:#64748B;'>#{c['id']}</span>",
+                f"<strong>{html.escape(c['name'])}</strong>",
+                html.escape(c["role"]),
+                f"<span style='color:#0284C7; font-weight:700;'>{c['match_score']:.1f}%</span>",
+                f"{c['skill_match']:.0f}%",
+                f"{c['experience_years']} yrs",
+                html.escape(c["education"]),
+                html.escape(gaps_text),
+                assess_text,
+                status_html,
+            ])
+
+        render_light_table(
+            headers=["ID", "Candidate", "Role", "Match Score", "Skill Match", "Experience", "Education", "Missing Skills", "Assessment", "Status"],
+            rows=table_rows,
+        )
+
+        df_export = pd.DataFrame(
+            [
+                {
+                    "ID": c["id"],
+                    "Name": c["name"],
+                    "Role": c["role"],
+                    "Match Score": f"{c['match_score']:.1f}%",
+                    "Skill Match": f"{c['skill_match']:.0f}%",
+                    "Experience": f"{c['experience_years']} yrs",
+                    "Education": c["education"],
+                    "Missing Skills": ", ".join(c["missing_skills"]),
+                    "Assessment": f"{c['assessment_score']:.1f}%" if c["status"] == "Assessed" else "Pending",
+                    "Status": c["status"],
+                }
+                for c in filtered_cands
+            ]
+        )
+
+        st.download_button(
+            "📥 Export Candidate Pipeline as CSV",
+            data=df_export.to_csv(index=False),
+            file_name="recruiter_candidate_pipeline.csv",
+            mime="text/csv",
+        )
+
+
+# ==============================================================================
+# ADMIN VIEW 3: REPORTS & COMPARISON
+# ==============================================================================
+elif page == "⚖️ Reports & Comparison":
+    st.markdown('<div class="eyebrow">HEAD-TO-HEAD BENCHMARKING</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Candidate Comparison & Benchmarks</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Compare candidate profiles, qualifications, match scores, and interview performance side by side.</div>',
+        unsafe_allow_html=True,
+    )
+
+    all_cands = db.get_all_candidates()
+    if len(all_cands) < 2:
+        st.info("Please have at least 2 candidates in the database to run side-by-side comparisons.")
+    else:
+        cand_map = {f"{c['name']} ({c['role']})": c for c in all_cands}
+        selected_cands = st.multiselect(
+            "Select 2 to 4 candidates to compare",
+            list(cand_map.keys()),
+            default=list(cand_map.keys())[:2],
+        )
+
+        if len(selected_cands) >= 2:
+            comp_data = [cand_map[name] for name in selected_cands]
+
+            radar = go.Figure()
+            colors = ["#0284C7", "#16A34A", "#7C3AED", "#D97706"]
+            for idx, c in enumerate(comp_data):
+                radar.add_trace(
+                    go.Scatterpolar(
+                        r=[c["match_score"], c["skill_match"], c["experience_match"], c["education_match"], c["assessment_score"]],
+                        theta=["Overall Match", "Skills", "Experience", "Education", "Assessment"],
+                        fill="toself",
+                        name=c["name"],
+                        line=dict(color=colors[idx % len(colors)], width=2),
+                    )
+                )
+            radar.update_layout(
+                polar=dict(
+                    bgcolor="#FFFFFF",
+                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#F1F5F9"),
+                    angularaxis=dict(gridcolor="#F1F5F9"),
+                ),
+                paper_bgcolor="#FFFFFF",
+                font=dict(color="#0F172A"),
+                margin=dict(l=20, r=20, t=20, b=20),
+                height=350,
+            )
+            st.plotly_chart(radar, use_container_width=True)
+
+            cols = st.columns(len(comp_data))
+            for i, c in enumerate(comp_data):
+                with cols[i]:
+                    st.markdown(
+                        f"""
+                    <div class="kpi-card" style="border-top: 4px solid {colors[i % len(colors)]};">
+                        <div class="kpi-title">{html.escape(c['name'])}</div>
+                        <div class="kpi-num" style="color:{colors[i % len(colors)]};">{c['match_score']:.1f}%</div>
+                        <div class="kpi-footer" style="color:#64748B;">{html.escape(c['role'])}</div>
+                        <hr style="border-color:#E2E8F0; margin: 12px 0;">
+                        <div style="font-size:0.85rem; color:#334155;">
+                            <div><strong>Skill Match:</strong> {c['skill_match']:.0f}%</div>
+                            <div><strong>Experience:</strong> {c['experience_years']} years</div>
+                            <div><strong>Assessment:</strong> {c['assessment_score']:.1f}%</div>
+                            <div style="margin-top:6px;"><strong>Missing:</strong><br>{', '.join([html.escape(s) for s in c['missing_skills']]) or 'None'}</div>
+                        </div>
+                    </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+
+
+# ==============================================================================
+# ADMIN VIEW 4: SETTINGS
+# ==============================================================================
+elif page == "⚙️ Settings":
+    st.markdown('<div class="eyebrow">CONFIGURATION & SYSTEM</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Platform Settings & AI Configuration</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Manage API keys, select default Groq LLM inference models, customize scoring weight ratios, and manage database state.</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="section-title">Groq Cloud AI Configuration</div>', unsafe_allow_html=True)
+    curr_key = get_groq_api_key() or ""
+    masked_key = (curr_key[:6] + "..." + curr_key[-4:]) if len(curr_key) > 10 else "Not Configured"
+    st.text_input("Active Groq API Key", value=masked_key, disabled=True)
+    st.caption("To update your key, edit `.streamlit/secrets.toml` with `GROQ_API_KEY = 'your_key'`.")
+
+    model_option = st.selectbox(
+        "Groq LLM Inference Model",
+        ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+        index=0,
+    )
+
+    st.markdown('<div class="section-title">Database Management</div>', unsafe_allow_html=True)
+    if st.button("🔄 Reset Candidate Database to Default Demo Pipeline"):
+        db.reset_database()
+        st.success("Candidate database has been reset with 10 demo candidates matching the dashboard!")
+        st.rerun()
+
+
+# ==============================================================================
+# CANDIDATE VIEW 1: RESUME ANALYZER
 # ==============================================================================
 elif page == "📄 Resume Analyzer":
     st.markdown('<div class="eyebrow">SCREENING & INTELLIGENCE</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-title">Resume vs. Job Description Analyzer</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="subtitle">Extract structured candidate entities, compute multi-factor match scores, and automatically add to your candidate pipeline.</div>',
+        '<div class="subtitle">Extract structured candidate entities, compute multi-factor match scores, and automatically evaluate candidate fit against job requirements.</div>',
         unsafe_allow_html=True,
     )
 
-    # Demo pre-fill if button was clicked
     default_cand_name = "John Doe" if st.session_state.get("demo_loaded") else ""
     default_cand_role = "Senior Full Stack Engineer" if st.session_state.get("demo_loaded") else ""
 
@@ -881,8 +1242,7 @@ elif page == "📄 Resume Analyzer":
 
             result = calculate_match_score(resume_data, jd_data, resume_text, jd_text)
             
-            # Auto-save to SQLite database
-            c_name = candidate_name.strip() or "Candidate " + str(total_cands + 1)
+            c_name = candidate_name.strip() or "Candidate " + str(candidate_count + 1)
             c_role = target_role.strip() or "Software Engineer"
             db.add_candidate(
                 name=c_name,
@@ -961,7 +1321,6 @@ elif page == "📄 Resume Analyzer":
                 unsafe_allow_html=True,
             )
 
-        # Tabbed Breakdown
         tab1, tab2, tab3 = st.tabs(["🎯 Skill Gap Detail", "🧠 Extracted Candidate Profile", "📊 Comparison Radar"])
         
         with tab1:
@@ -974,7 +1333,6 @@ elif page == "📄 Resume Analyzer":
             st.markdown("<br>**Missing Preferred Skills:**", unsafe_allow_html=True)
             st.markdown("".join([f'<span class="badge badge-missing-pref">{s}</span>' for s in gap["missing_preferred"]]) or "*None*", unsafe_allow_html=True)
 
-        # TAB 2: GORGEOUS, PROFESSIONAL CANDIDATE PROFILE (NO RAW CODE)
         with tab2:
             st.markdown(
                 f"""
@@ -992,7 +1350,6 @@ elif page == "📄 Resume Analyzer":
                 unsafe_allow_html=True,
             )
 
-            # Skills Section
             st.markdown('<div style="font-weight:800; color:#0F172A; font-size:0.95rem; margin-bottom:6px;">🛠️ Identified Technical & Professional Skills</div>', unsafe_allow_html=True)
             skills_list = rdata.get("skills", [])
             if skills_list:
@@ -1001,7 +1358,6 @@ elif page == "📄 Resume Analyzer":
             else:
                 st.info("No specific skills extracted.")
 
-            # Education Section
             st.markdown('<div style="font-weight:800; color:#0F172A; font-size:0.95rem; margin-bottom:6px;">🎓 Education & Academic History</div>', unsafe_allow_html=True)
             edu_list = rdata.get("education", [])
             if edu_list:
@@ -1018,7 +1374,6 @@ elif page == "📄 Resume Analyzer":
             else:
                 st.info("No formal education history detected.")
 
-            # Experience Section
             st.markdown('<div style="font-weight:800; color:#0F172A; font-size:0.95rem; margin:1.2rem 0 6px 0;">💼 Professional Work Experience</div>', unsafe_allow_html=True)
             exp_list = rdata.get("experience", [])
             if exp_list:
@@ -1072,7 +1427,7 @@ elif page == "📄 Resume Analyzer":
 
 
 # ==============================================================================
-# PAGE 3: CANDIDATE ASSESSMENT & MOCK INTERVIEW
+# CANDIDATE VIEW 2: CANDIDATE ASSESSMENT & MOCK INTERVIEW
 # ==============================================================================
 elif page == "🎯 Candidate Assessment":
     st.markdown('<div class="eyebrow">INTERVIEW INTELLIGENCE</div>', unsafe_allow_html=True)
@@ -1166,191 +1521,3 @@ elif page == "🎯 Candidate Assessment":
             db.update_candidate_assessment(cand_id, new_score, status="Assessed")
             st.success(f"Candidate assessment updated to {new_score:.1f}%!")
             st.rerun()
-
-
-# ==============================================================================
-# PAGE 4: RECRUITER DATABASE
-# ==============================================================================
-elif page == "👥 Recruiter Database":
-    st.markdown('<div class="eyebrow">TALENT REPOSITORY</div>', unsafe_allow_html=True)
-    st.markdown('<div class="main-title">Recruiter Candidate Database</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="subtitle">Search, filter, inspect, and manage screened candidates stored in the local SQLite database.</div>',
-        unsafe_allow_html=True,
-    )
-
-    all_cands = db.get_all_candidates()
-
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        search_query = st.text_input("🔍 Search candidates by name or role", "")
-    with col2:
-        status_filter = st.selectbox("Filter by Status", ["All", "Screened", "Assessed"])
-
-    filtered_cands = all_cands
-    if search_query:
-        filtered_cands = [
-            c for c in filtered_cands
-            if search_query.lower() in c["name"].lower() or search_query.lower() in c["role"].lower()
-        ]
-    if status_filter != "All":
-        filtered_cands = [c for c in filtered_cands if c["status"] == status_filter]
-
-    st.markdown(f"**Showing {len(filtered_cands)} candidates**")
-
-    if filtered_cands:
-        table_rows = []
-        for c in filtered_cands:
-            status_html = (
-                '<span class="table-pill-assessed">● Assessed</span>'
-                if c["status"] == "Assessed"
-                else '<span class="table-pill-screened">● Screened</span>'
-            )
-            gaps_text = ", ".join(c["missing_skills"]) or "None"
-            assess_text = f"<strong>{c['assessment_score']:.1f}%</strong>" if c["status"] == "Assessed" else "<span style='color:#94A3B8;'>Pending</span>"
-            table_rows.append([
-                f"<span style='color:#64748B;'>#{c['id']}</span>",
-                f"<strong>{html.escape(c['name'])}</strong>",
-                html.escape(c["role"]),
-                f"<span style='color:#0284C7; font-weight:700;'>{c['match_score']:.1f}%</span>",
-                f"{c['skill_match']:.0f}%",
-                f"{c['experience_years']} yrs",
-                html.escape(c["education"]),
-                html.escape(gaps_text),
-                assess_text,
-                status_html,
-            ])
-
-        render_light_table(
-            headers=["ID", "Candidate", "Role", "Match Score", "Skill Match", "Experience", "Education", "Missing Skills", "Assessment", "Status"],
-            rows=table_rows,
-        )
-
-        df_export = pd.DataFrame(
-            [
-                {
-                    "ID": c["id"],
-                    "Name": c["name"],
-                    "Role": c["role"],
-                    "Match Score": f"{c['match_score']:.1f}%",
-                    "Skill Match": f"{c['skill_match']:.0f}%",
-                    "Experience": f"{c['experience_years']} yrs",
-                    "Education": c["education"],
-                    "Missing Skills": ", ".join(c["missing_skills"]),
-                    "Assessment": f"{c['assessment_score']:.1f}%" if c["status"] == "Assessed" else "Pending",
-                    "Status": c["status"],
-                }
-                for c in filtered_cands
-            ]
-        )
-
-        st.download_button(
-            "📥 Export Candidate Pipeline as CSV",
-            data=df_export.to_csv(index=False),
-            file_name="recruiter_candidate_pipeline.csv",
-            mime="text/csv",
-        )
-
-
-# ==============================================================================
-# PAGE 5: REPORTS & COMPARISON
-# ==============================================================================
-elif page == "⚖️ Reports & Comparison":
-    st.markdown('<div class="eyebrow">HEAD-TO-HEAD BENCHMARKING</div>', unsafe_allow_html=True)
-    st.markdown('<div class="main-title">Candidate Comparison & Benchmarks</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="subtitle">Compare candidate profiles, qualifications, match scores, and interview performance side by side.</div>',
-        unsafe_allow_html=True,
-    )
-
-    all_cands = db.get_all_candidates()
-    if len(all_cands) < 2:
-        st.info("Please have at least 2 candidates in the database to run side-by-side comparisons.")
-    else:
-        cand_map = {f"{c['name']} ({c['role']})": c for c in all_cands}
-        selected_cands = st.multiselect(
-            "Select 2 to 4 candidates to compare",
-            list(cand_map.keys()),
-            default=list(cand_map.keys())[:2],
-        )
-
-        if len(selected_cands) >= 2:
-            comp_data = [cand_map[name] for name in selected_cands]
-
-            # Radar Chart Overlay
-            radar = go.Figure()
-            colors = ["#0284C7", "#16A34A", "#7C3AED", "#D97706"]
-            for idx, c in enumerate(comp_data):
-                radar.add_trace(
-                    go.Scatterpolar(
-                        r=[c["match_score"], c["skill_match"], c["experience_match"], c["education_match"], c["assessment_score"]],
-                        theta=["Overall Match", "Skills", "Experience", "Education", "Assessment"],
-                        fill="toself",
-                        name=c["name"],
-                        line=dict(color=colors[idx % len(colors)], width=2),
-                    )
-                )
-            radar.update_layout(
-                polar=dict(
-                    bgcolor="#FFFFFF",
-                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#F1F5F9"),
-                    angularaxis=dict(gridcolor="#F1F5F9"),
-                ),
-                paper_bgcolor="#FFFFFF",
-                font=dict(color="#0F172A"),
-                margin=dict(l=20, r=20, t=20, b=20),
-                height=350,
-            )
-            st.plotly_chart(radar, use_container_width=True)
-
-            # Side by side columns
-            cols = st.columns(len(comp_data))
-            for i, c in enumerate(comp_data):
-                with cols[i]:
-                    st.markdown(
-                        f"""
-                    <div class="kpi-card" style="border-top: 4px solid {colors[i % len(colors)]};">
-                        <div class="kpi-title">{html.escape(c['name'])}</div>
-                        <div class="kpi-num" style="color:{colors[i % len(colors)]};">{c['match_score']:.1f}%</div>
-                        <div class="kpi-footer" style="color:#64748B;">{html.escape(c['role'])}</div>
-                        <hr style="border-color:#E2E8F0; margin: 12px 0;">
-                        <div style="font-size:0.85rem; color:#334155;">
-                            <div><strong>Skill Match:</strong> {c['skill_match']:.0f}%</div>
-                            <div><strong>Experience:</strong> {c['experience_years']} years</div>
-                            <div><strong>Assessment:</strong> {c['assessment_score']:.1f}%</div>
-                            <div style="margin-top:6px;"><strong>Missing:</strong><br>{', '.join([html.escape(s) for s in c['missing_skills']]) or 'None'}</div>
-                        </div>
-                    </div>
-                    """,
-                        unsafe_allow_html=True,
-                    )
-
-
-# ==============================================================================
-# PAGE 6: SETTINGS
-# ==============================================================================
-elif page == "⚙️ Settings":
-    st.markdown('<div class="eyebrow">CONFIGURATION & SYSTEM</div>', unsafe_allow_html=True)
-    st.markdown('<div class="main-title">Platform Settings & AI Configuration</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="subtitle">Manage API keys, select default Groq LLM inference models, customize scoring weight ratios, and manage database state.</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="section-title">Groq Cloud AI Configuration</div>', unsafe_allow_html=True)
-    curr_key = get_groq_api_key() or ""
-    masked_key = (curr_key[:6] + "..." + curr_key[-4:]) if len(curr_key) > 10 else "Not Configured"
-    st.text_input("Active Groq API Key", value=masked_key, disabled=True)
-    st.caption("To update your key, edit `.streamlit/secrets.toml` with `GROQ_API_KEY = 'your_key'`.")
-
-    model_option = st.selectbox(
-        "Groq LLM Inference Model",
-        ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
-        index=0,
-    )
-
-    st.markdown('<div class="section-title">Database Management</div>', unsafe_allow_html=True)
-    if st.button("🔄 Reset Candidate Database to Default Demo Pipeline"):
-        db.reset_database()
-        st.success("Candidate database has been reset with 10 demo candidates matching the dashboard!")
-        st.rerun()
