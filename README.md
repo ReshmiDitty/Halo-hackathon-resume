@@ -1,4 +1,4 @@
-Check out the website:  http://localhost:8501
+Check out the website:  https://halo-hackathon-resume-lwkywr5eergsmpedgpbhcv.streamlit.app/
 
 # 📄 HALO AI Resume Analyzer & Matcher
 
