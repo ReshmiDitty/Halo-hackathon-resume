@@ -1587,4 +1587,4 @@ elif page == "🎯 Candidate Assessment":
         if st.button("💾 Save Assessment to Pipeline"):
             db.update_candidate_assessment(cand_id, new_score, status="Assessed")
             st.success(f"Candidate assessment updated to {new_score:.1f}%!")
-            st.rerun()
+            st.rerun()
